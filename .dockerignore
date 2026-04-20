@@ -1,0 +1,10 @@
+# Keep context small; app is built inside the image (see ./Dockerfile).
+.git
+.github
+.idea
+.vscode
+**/.DS_Store
+*.iml
+.env
+.env.*
+target/

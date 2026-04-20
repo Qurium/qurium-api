@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: qurium-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${QURIUM_DATASOURCE_DB:-qurium}
+      POSTGRES_USER: ${QURIUM_DATASOURCE_USERNAME:-qurium}
+      POSTGRES_PASSWORD: ${QURIUM_DATASOURCE_PASSWORD:-change-me}
+    ports:
+      - "${QURIUM_DATASOURCE_PORT:-5432}:5432"
+    volumes:
+      - qurium-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: qurium-api:latest
+    container_name: qurium-api
+    restart: unless-stopped
+    environment:
+      QURIUM_DATABASE: ${QURIUM_DATABASE:-postgresql}
+      QURIUM_DATASOURCE_DB: ${QURIUM_DATASOURCE_DB:-qurium}
+      QURIUM_DATASOURCE_USERNAME: ${QURIUM_DATASOURCE_USERNAME:-qurium}
+      QURIUM_DATASOURCE_PASSWORD: ${QURIUM_DATASOURCE_PASSWORD:-change-me}
+      QURIUM_DATASOURCE_URL: jdbc:postgresql://db:5432/${QURIUM_DATASOURCE_DB:-qurium}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${QURIUM_HTTP_PORT:-8080}:8080"
+
+volumes:
+  qurium-postgres-data:
