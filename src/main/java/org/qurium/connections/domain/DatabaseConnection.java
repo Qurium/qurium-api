@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import jakarta.persistence.EnumType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -18,7 +17,6 @@ import java.util.UUID;
 @Getter
 @Setter
 @NoArgsConstructor
-@RequiredArgsConstructor
 public class DatabaseConnection extends PanacheEntityBase {
 
     @Id
