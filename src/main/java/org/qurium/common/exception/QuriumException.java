@@ -1,5 +1,8 @@
 package org.qurium.common.exception;
 
+import lombok.Getter;
+
+@Getter
 public class QuriumException extends RuntimeException {
 
     private final QuriumExceptionCode code;
@@ -9,7 +12,4 @@ public class QuriumException extends RuntimeException {
         this.code = code;
     }
 
-    public QuriumExceptionCode getCode() {
-        return code;
-    }
 }
