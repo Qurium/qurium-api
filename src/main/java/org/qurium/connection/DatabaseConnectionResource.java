@@ -15,14 +15,14 @@ import jakarta.ws.rs.QueryParam;
 import lombok.RequiredArgsConstructor;
 import org.qurium.common.PaginatedResponse;
 import org.qurium.common.exception.QuriumErrorResponse;
-import org.qurium.connection.dto.ConnectionDTO;
-import org.qurium.connection.query.ListConnections;
+import org.qurium.connection.dto.DatabaseConnectionDTO;
+import org.qurium.connection.query.ListDatabaseConnections;
 
 @Path("/api/connections")
 @RequiredArgsConstructor
-public class ConnectionResource {
+public class DatabaseConnectionResource {
 
-    private final ListConnections listConnections;
+    private final ListDatabaseConnections listConnections;
 
     @GET
     @Operation(
@@ -38,7 +38,7 @@ public class ConnectionResource {
                 description = "Invalid pagination parameters",
                 content = @Content(schema = @Schema(implementation = QuriumErrorResponse.class)))
     })
-    public PaginatedResponse<ConnectionDTO> listConnections(
+    public PaginatedResponse<DatabaseConnectionDTO> listConnections(
             @Parameter(description = "Number of the page") @QueryParam("page") int page,
             @Parameter(description = "Number of items per page")
                     @QueryParam("size")

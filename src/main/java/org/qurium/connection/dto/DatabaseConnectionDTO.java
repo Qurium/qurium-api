@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.util.UUID;
 import org.qurium.connection.domain.DatabaseConnection;
 
-public record ConnectionDTO(
+public record DatabaseConnectionDTO(
         UUID id,
         String name,
         DatabaseConnection type,

@@ -9,4 +9,4 @@ import org.qurium.connection.domain.DatabaseConnection;
 
 @ApplicationScoped
 @RequiredArgsConstructor
-public class ConnectionRepository implements PanacheRepositoryBase<DatabaseConnection, UUID> {}
+public class DatabaseConnectionRepository implements PanacheRepositoryBase<DatabaseConnection, UUID> {}
