@@ -1,0 +1,13 @@
+/* Qurium - 2026 */
+package org.qurium.connection.mapper;
+
+import java.util.List;
+import org.mapstruct.Mapper;
+import org.qurium.connection.domain.DatabaseConnection;
+import org.qurium.connection.dto.ConnectionDTO;
+
+@Mapper(componentModel = "jakarta")
+public interface ConnectionMapper {
+
+    List<ConnectionDTO> toDTOs(List<DatabaseConnection> connection);
+}

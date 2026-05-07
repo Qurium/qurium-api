@@ -1,12 +1,12 @@
+/* Qurium - 2026 */
 package org.qurium.common;
 
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.Base64;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.qurium.common.exception.QuriumException;
-
-import java.util.Base64;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class EncryptionServiceTest {
 

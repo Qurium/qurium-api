@@ -1,19 +1,19 @@
+/* Qurium - 2026 */
 package org.qurium.common;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.qurium.common.exception.QuriumException;
-import org.qurium.common.exception.QuriumExceptionCode;
-
-import javax.crypto.Cipher;
-import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
+import javax.crypto.Cipher;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.qurium.common.exception.QuriumException;
+import org.qurium.common.exception.QuriumExceptionCode;
 
 @ApplicationScoped
 public class EncryptionService {
@@ -73,5 +73,4 @@ public class EncryptionService {
             throw new QuriumException(QuriumExceptionCode.UNABLE_TO_DECRYPT);
         }
     }
-
 }

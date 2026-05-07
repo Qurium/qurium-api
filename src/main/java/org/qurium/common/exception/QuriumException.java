@@ -1,3 +1,4 @@
+/* Qurium - 2026 */
 package org.qurium.common.exception;
 
 import lombok.Getter;
@@ -11,5 +12,4 @@ public class QuriumException extends RuntimeException {
         super(code.getErrorMessage());
         this.code = code;
     }
-
 }
