@@ -15,7 +15,10 @@ public enum QuriumExceptionCode {
     UNABLE_TO_ENCRYPT(
             1001, "It was not possible to encrypt", Response.Status.INTERNAL_SERVER_ERROR),
     UNABLE_TO_DECRYPT(
-            1002, "It was not possible to decrypt", Response.Status.INTERNAL_SERVER_ERROR);
+            1002, "It was not possible to decrypt", Response.Status.INTERNAL_SERVER_ERROR),
+
+    // Database Connection
+    DATABASE_CONNECTION_NOT_FOUND(2001, "Database connection not found", Response.Status.NOT_FOUND);
 
     private final int errorCode;
     private final String errorMessage;

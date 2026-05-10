@@ -2,7 +2,6 @@
 package org.qurium.connection.dto.requests;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -14,8 +13,7 @@ import org.qurium.connection.domain.DatabaseConnectionType;
 @Setter
 public class CreateDatabaseConnectionRequest {
 
-    @NotBlank
-    private String name;
+    @NotBlank private String name;
 
     @NotNull private DatabaseConnectionType type;
 

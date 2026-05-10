@@ -10,10 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.*;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.qurium.common.PaginatedResponse;
@@ -22,6 +19,7 @@ import org.qurium.connection.command.data.CreateDatabaseConnectionCommand;
 import org.qurium.connection.command.handler.CreateDatabaseConnectionHandler;
 import org.qurium.connection.dto.DatabaseConnectionDTO;
 import org.qurium.connection.dto.requests.CreateDatabaseConnectionRequest;
+import org.qurium.connection.query.GetDatabaseConnection;
 import org.qurium.connection.query.ListDatabaseConnections;
 
 @Path("/api/connections")
@@ -30,6 +28,7 @@ public class DatabaseConnectionResource {
 
     private final ListDatabaseConnections listConnections;
     private final CreateDatabaseConnectionHandler createDatabaseConnectionHandler;
+    private final GetDatabaseConnection getDatabaseConnection;
 
     @GET
     @Operation(
@@ -54,6 +53,27 @@ public class DatabaseConnectionResource {
                     int size) {
 
         return PaginatedResponse.of(listConnections.query(), page, size);
+    }
+
+    @GET
+    @Path("/{id}")
+    @Operation(
+            summary = "List connections",
+            description = "Returns a paginated list of all database connections.")
+    @ApiResponses({
+        @ApiResponse(
+                responseCode = "200",
+                description = "Paginated list of connections",
+                content = @Content(schema = @Schema(implementation = PaginatedResponse.class))),
+        @ApiResponse(
+                responseCode = "400",
+                description = "Invalid pagination parameters",
+                content = @Content(schema = @Schema(implementation = QuriumErrorResponse.class)))
+    })
+    public DatabaseConnectionDTO getConnection(
+            @Parameter(description = "connection id") @PathParam("id") UUID id) {
+
+        return getDatabaseConnection.query(id);
     }
 
     @POST
