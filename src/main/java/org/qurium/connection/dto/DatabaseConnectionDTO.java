@@ -3,12 +3,12 @@ package org.qurium.connection.dto;
 
 import java.time.Instant;
 import java.util.UUID;
-import org.qurium.connection.domain.DatabaseConnection;
+import org.qurium.connection.domain.DatabaseConnectionType;
 
 public record DatabaseConnectionDTO(
         UUID id,
         String name,
-        DatabaseConnection type,
+        DatabaseConnectionType type,
         String host,
         Long port,
         String databaseName,
