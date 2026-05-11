@@ -11,12 +11,15 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Response;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.qurium.common.PaginatedResponse;
 import org.qurium.common.exception.QuriumErrorResponse;
 import org.qurium.connection.command.data.CreateDatabaseConnectionCommand;
+import org.qurium.connection.command.data.DeleteDatabaseConnectionCommand;
 import org.qurium.connection.command.handler.CreateDatabaseConnectionHandler;
+import org.qurium.connection.command.handler.DeleteDatabaseConnectionHandler;
 import org.qurium.connection.dto.DatabaseConnectionDTO;
 import org.qurium.connection.dto.requests.CreateDatabaseConnectionRequest;
 import org.qurium.connection.query.GetDatabaseConnection;
@@ -29,6 +32,7 @@ public class DatabaseConnectionResource {
     private final ListDatabaseConnections listConnections;
     private final CreateDatabaseConnectionHandler createDatabaseConnectionHandler;
     private final GetDatabaseConnection getDatabaseConnection;
+    private final DeleteDatabaseConnectionHandler deleteDatabaseConnectionHandler;
 
     @GET
     @Operation(
@@ -55,27 +59,6 @@ public class DatabaseConnectionResource {
         return PaginatedResponse.of(listConnections.query(), page, size);
     }
 
-    @GET
-    @Path("/{id}")
-    @Operation(
-            summary = "List connections",
-            description = "Returns a paginated list of all database connections.")
-    @ApiResponses({
-        @ApiResponse(
-                responseCode = "200",
-                description = "Paginated list of connections",
-                content = @Content(schema = @Schema(implementation = PaginatedResponse.class))),
-        @ApiResponse(
-                responseCode = "400",
-                description = "Invalid pagination parameters",
-                content = @Content(schema = @Schema(implementation = QuriumErrorResponse.class)))
-    })
-    public DatabaseConnectionDTO getConnection(
-            @Parameter(description = "connection id") @PathParam("id") UUID id) {
-
-        return getDatabaseConnection.query(id);
-    }
-
     @POST
     @Operation(
             summary = "Create database connection",
@@ -93,5 +76,45 @@ public class DatabaseConnectionResource {
     public UUID createConnection(@Valid CreateDatabaseConnectionRequest request) {
 
         return createDatabaseConnectionHandler.handle(new CreateDatabaseConnectionCommand(request));
+    }
+
+    @GET
+    @Path("/{id}")
+    @Operation(summary = "Get a connection", description = "Returns a specific database connection")
+    @ApiResponses({
+        @ApiResponse(
+                responseCode = "200",
+                description = "Paginated list of connections",
+                content = @Content(schema = @Schema(implementation = PaginatedResponse.class))),
+        @ApiResponse(
+                responseCode = "400",
+                description = "Error while fetching database connection",
+                content = @Content(schema = @Schema(implementation = QuriumErrorResponse.class)))
+    })
+    public DatabaseConnectionDTO getConnection(
+            @Parameter(description = "connection id") @PathParam("id") UUID id) {
+
+        return getDatabaseConnection.query(id);
+    }
+
+    @DELETE
+    @Path("/{id}")
+    @Operation(
+            summary = "Delete database connection",
+            description = "Soft-deletes a database connection by setting its deleted_at timestamp.")
+    @ApiResponses({
+        @ApiResponse(
+                responseCode = "204",
+                description = "Database connection deleted successfully"),
+        @ApiResponse(
+                responseCode = "404",
+                description = "Database connection not found",
+                content = @Content(schema = @Schema(implementation = QuriumErrorResponse.class)))
+    })
+    public Response deleteConnection(
+            @Parameter(description = "connection id") @PathParam("id") UUID id) {
+
+        deleteDatabaseConnectionHandler.handle(new DeleteDatabaseConnectionCommand(id));
+        return Response.noContent().build();
     }
 }

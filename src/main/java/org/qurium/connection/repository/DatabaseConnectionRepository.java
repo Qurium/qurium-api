@@ -3,6 +3,9 @@ package org.qurium.connection.repository;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.transaction.Transactional;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.qurium.connection.domain.DatabaseConnection;
@@ -13,6 +16,7 @@ import org.qurium.connection.dto.requests.CreateDatabaseConnectionRequest;
 public class DatabaseConnectionRepository
         implements PanacheRepositoryBase<DatabaseConnection, UUID> {
 
+    @Transactional(Transactional.TxType.MANDATORY)
     public UUID store(CreateDatabaseConnectionRequest request) {
 
         DatabaseConnection newConnection = new DatabaseConnection();
@@ -26,5 +30,15 @@ public class DatabaseConnectionRepository
         persist(newConnection);
 
         return newConnection.getId();
+    }
+
+    public Optional<DatabaseConnection> findActiveById(UUID id) {
+
+        return find("id = ?1 and deletedAt is null", id).firstResultOptional();
+    }
+
+    public List<DatabaseConnection> findAllActive() {
+
+        return find("deletedAt is null").list();
     }
 }

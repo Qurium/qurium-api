@@ -3,7 +3,6 @@ package org.qurium.connection.mapper;
 
 import java.util.List;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.qurium.connection.domain.DatabaseConnection;
 import org.qurium.connection.dto.DatabaseConnectionDTO;
 

@@ -17,6 +17,6 @@ public class ListDatabaseConnections {
 
     public List<DatabaseConnectionDTO> query() {
 
-        return connectionMapper.toDTOs(connectionRepository.findAll().list());
+        return connectionMapper.toDTOs(connectionRepository.findAllActive());
     }
 }

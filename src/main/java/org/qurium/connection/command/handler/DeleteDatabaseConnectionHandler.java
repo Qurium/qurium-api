@@ -1,31 +1,35 @@
 /* Qurium - 2026 */
-package org.qurium.connection.query;
+package org.qurium.connection.command.handler;
 
 import static org.qurium.common.exception.QuriumExceptionCode.DATABASE_CONNECTION_NOT_FOUND;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import java.util.UUID;
+import jakarta.transaction.Transactional;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
+import org.qurium.common.CommandHandler;
 import org.qurium.common.exception.QuriumException;
+import org.qurium.connection.command.data.DeleteDatabaseConnectionCommand;
 import org.qurium.connection.domain.DatabaseConnection;
-import org.qurium.connection.dto.DatabaseConnectionDTO;
-import org.qurium.connection.mapper.DatabaseConnectionMapper;
 import org.qurium.connection.repository.DatabaseConnectionRepository;
 
 @ApplicationScoped
 @RequiredArgsConstructor
-public class GetDatabaseConnection {
+public class DeleteDatabaseConnectionHandler
+        implements CommandHandler<DeleteDatabaseConnectionCommand, Void> {
 
-    private final DatabaseConnectionMapper mapper;
     private final DatabaseConnectionRepository repository;
 
-    public DatabaseConnectionDTO query(UUID id) {
+    @Transactional
+    public Void handle(DeleteDatabaseConnectionCommand command) {
 
-        DatabaseConnection databaseConnection =
+        DatabaseConnection connection =
                 repository
-                        .findActiveById(id)
+                        .findActiveById(command.connectionId())
                         .orElseThrow(() -> new QuriumException(DATABASE_CONNECTION_NOT_FOUND));
 
-        return mapper.toDTO(databaseConnection);
+        connection.setDeletedAt(Instant.now());
+
+        return null;
     }
 }

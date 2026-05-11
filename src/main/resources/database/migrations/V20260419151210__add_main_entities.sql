@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS database_connection
     username           VARCHAR(255),
     encrypted_password TEXT,
     created_at         TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    updated_at         TIMESTAMPTZ
+    updated_at         TIMESTAMPTZ,
+    deleted_at         TIMESTAMPTZ
 );
 
 CREATE INDEX idx_database_connection_type ON database_connection (type);
