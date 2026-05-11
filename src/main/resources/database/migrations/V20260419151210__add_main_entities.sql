@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS database_connection
     host               VARCHAR(255) NOT NULL,
     port               BIGINT       NOT NULL,
     database_name      VARCHAR(255) NOT NULL,
-    username           VARCHAR(255) NOT NULL,
-    encrypted_password TEXT         NOT NULL,
+    username           VARCHAR(255),
+    encrypted_password TEXT,
     created_at         TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at         TIMESTAMPTZ
 );

@@ -21,20 +21,20 @@ public class DatabaseConnection extends PanacheEntityBase {
 
     @Id @GeneratedValue private UUID id;
 
-    @Column(name = "name")
+    @Column(name = "name", nullable = false)
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type")
+    @Column(name = "type", nullable = false)
     private DatabaseConnectionType type;
 
-    @Column(name = "host")
+    @Column(name = "host", nullable = false)
     private String host;
 
-    @Column(name = "port")
+    @Column(name = "port", nullable = false)
     private Long port;
 
-    @Column(name = "database_name")
+    @Column(name = "database_name", nullable = false)
     private String databaseName;
 
     @Column(name = "username")
@@ -44,7 +44,7 @@ public class DatabaseConnection extends PanacheEntityBase {
     private String encryptedPassword;
 
     @CreationTimestamp
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
     @UpdateTimestamp
