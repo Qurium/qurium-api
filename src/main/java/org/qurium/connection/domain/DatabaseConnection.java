@@ -1,25 +1,19 @@
 /* Qurium - 2026 */
 package org.qurium.connection.domain;
 
-import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import jakarta.persistence.EnumType;
-import java.time.Instant;
-import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.qurium.common.BaseEntity;
 
 @Entity
 @Table(name = "database_connection")
 @Getter
 @Setter
 @NoArgsConstructor
-public class DatabaseConnection extends PanacheEntityBase {
-
-    @Id @GeneratedValue private UUID id;
+public class DatabaseConnection extends BaseEntity {
 
     @Column(name = "name", nullable = false)
     private String name;
@@ -42,12 +36,4 @@ public class DatabaseConnection extends PanacheEntityBase {
 
     @Column(name = "encrypted_password")
     private String encryptedPassword;
-
-    @CreationTimestamp
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt = Instant.now();
-
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private Instant updatedAt;
 }
