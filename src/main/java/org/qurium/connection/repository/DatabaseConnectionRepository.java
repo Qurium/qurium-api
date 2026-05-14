@@ -31,14 +31,4 @@ public class DatabaseConnectionRepository
 
         return newConnection.getId();
     }
-
-    public Optional<DatabaseConnection> findActiveById(UUID id) {
-
-        return find("id = ?1 and deletedAt is null", id).firstResultOptional();
-    }
-
-    public List<DatabaseConnection> findAllActive() {
-
-        return find("deletedAt is null").list();
-    }
 }
