@@ -25,10 +25,10 @@ public class DeleteDatabaseConnectionHandler
 
         DatabaseConnection connection =
                 repository
-                        .findActiveById(command.connectionId())
+                        .findByIdOptional(command.connectionId())
                         .orElseThrow(() -> new QuriumException(DATABASE_CONNECTION_NOT_FOUND));
 
-        connection.setDeletedAt(Instant.now());
+        connection.delete();
 
         return null;
     }

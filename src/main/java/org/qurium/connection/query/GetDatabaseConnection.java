@@ -23,7 +23,7 @@ public class GetDatabaseConnection {
 
         DatabaseConnection databaseConnection =
                 repository
-                        .findActiveById(id)
+                        .findByIdOptional(id)
                         .orElseThrow(() -> new QuriumException(DATABASE_CONNECTION_NOT_FOUND));
 
         return mapper.toDTO(databaseConnection);
