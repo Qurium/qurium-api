@@ -18,7 +18,11 @@ public enum QuriumExceptionCode {
             1002, "It was not possible to decrypt", Response.Status.INTERNAL_SERVER_ERROR),
 
     // Database Connection
-    DATABASE_CONNECTION_NOT_FOUND(2001, "Database connection not found", Response.Status.NOT_FOUND);
+    DATABASE_CONNECTION_NOT_FOUND(2001, "Database connection not found", Response.Status.NOT_FOUND),
+    DATABASE_CONNECTION_UNREACHABLE(
+            2002, "Could not establish a connection to the database", Response.Status.BAD_REQUEST),
+    DATABASE_CONNECTION_ALREADY_EXISTS(
+            2003, "This database connection already exists", Response.Status.CONFLICT);
 
     private final int errorCode;
     private final String errorMessage;

@@ -3,10 +3,18 @@ package org.qurium.connection;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
+import static org.mockito.Mockito.*;
 
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.MediaType;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.qurium.common.exception.QuriumException;
+import org.qurium.common.exception.QuriumExceptionCode;
 
 @QuarkusTest
 class DatabaseConnectionResourceTest {
@@ -16,30 +24,14 @@ class DatabaseConnectionResourceTest {
     private static final String UUID_PATTERN =
             "\"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\"";
 
-    private static final String VALID_CONNECTION_BODY =
-            """
-            {
-                "name": "Test Connection",
-                "type": "POSTGRES",
-                "host": "localhost",
-                "port": 5432,
-                "databaseName": "testdb"
-            }
-            """;
+    @InjectMock DatabaseConnectionFactory connectionFactory;
+    @Inject EntityManager entityManager;
 
-    private String createConnection() {
-        return given().contentType(MediaType.APPLICATION_JSON)
-                .body(VALID_CONNECTION_BODY)
-                .when()
-                .post(BASE_PATH)
-                .then()
-                .statusCode(200)
-                .extract()
-                .asString()
-                .replace("\"", "");
+    @BeforeEach
+    @Transactional
+    void cleanUp() {
+        entityManager.createNativeQuery("DELETE FROM database_connection").executeUpdate();
     }
-
-    // GET /api/connections
 
     @Test
     void listConnections_returnsPagedResult() {
@@ -89,8 +81,6 @@ class DatabaseConnectionResourceTest {
                 .statusCode(400);
     }
 
-    // GET /api/connections/{id}
-
     @Test
     void getConnection_existingId_returnsConnection() {
         String id = createConnection();
@@ -102,9 +92,9 @@ class DatabaseConnectionResourceTest {
                 .body("id", equalTo(id))
                 .body("name", equalTo("Test Connection"))
                 .body("type", equalTo("POSTGRES"))
-                .body("host", equalTo("localhost"))
+                .body("host", equalTo("192.168.1.100"))
                 .body("port", equalTo(5432))
-                .body("databaseName", equalTo("testdb"));
+                .body("databaseName", equalTo("mydb"));
     }
 
     @Test
@@ -139,25 +129,57 @@ class DatabaseConnectionResourceTest {
     }
 
     @Test
-    void createConnection_withCredentials_returnsUuid() {
+    void createConnection_duplicateTarget_returns409() {
+        createConnection();
+
+        given().contentType(MediaType.APPLICATION_JSON)
+                .body(VALID_CONNECTION_BODY)
+                .when()
+                .post(BASE_PATH)
+                .then()
+                .statusCode(409)
+                .body("code", equalTo(2003));
+    }
+
+    @Test
+    void createConnection_sameTargetDifferentName_returns409() {
+        createConnection();
+
+        String differentName = VALID_CONNECTION_BODY.replace("Test Connection", "Other Name");
+
+        given().contentType(MediaType.APPLICATION_JSON)
+                .body(differentName)
+                .when()
+                .post(BASE_PATH)
+                .then()
+                .statusCode(409)
+                .body("code", equalTo(2003));
+    }
+
+    @Test
+    void createConnection_unreachableHost_returns400() {
+        doThrow(new QuriumException(QuriumExceptionCode.DATABASE_CONNECTION_UNREACHABLE))
+                .when(connectionFactory)
+                .verify(any(), any(), any(), any(), any(), any());
+
         given().contentType(MediaType.APPLICATION_JSON)
                 .body(
                         """
                         {
-                            "name": "Connection With Credentials",
-                            "type": "MYSQL",
-                            "host": "localhost",
-                            "port": 3306,
-                            "databaseName": "mydb",
-                            "username": "admin",
-                            "password": "secret"
+                            "name": "Unreachable Connection",
+                            "type": "POSTGRES",
+                            "host": "192.168.1.200",
+                            "port": 5432,
+                            "databaseName": "ghost",
+                            "username": "user",
+                            "password": "pass"
                         }
                         """)
                 .when()
                 .post(BASE_PATH)
                 .then()
-                .statusCode(200)
-                .body(matchesPattern(UUID_PATTERN));
+                .statusCode(400)
+                .body("code", equalTo(2002));
     }
 
     @Test
@@ -237,8 +259,6 @@ class DatabaseConnectionResourceTest {
                 .statusCode(400);
     }
 
-    // DELETE /api/connections/{id}
-
     @Test
     void deleteConnection_existingId_returns204() {
         String id = createConnection();
@@ -275,5 +295,30 @@ class DatabaseConnectionResourceTest {
                 .then()
                 .statusCode(404)
                 .body("code", equalTo(2001));
+    }
+
+    private static final String VALID_CONNECTION_BODY =
+            """
+            {
+                "name": "Test Connection",
+                "type": "POSTGRES",
+                "host": "192.168.1.100",
+                "port": 5432,
+                "databaseName": "mydb",
+                "username": "admin",
+                "password": "secret"
+            }
+            """;
+
+    private String createConnection() {
+        return given().contentType(MediaType.APPLICATION_JSON)
+                .body(VALID_CONNECTION_BODY)
+                .when()
+                .post(BASE_PATH)
+                .then()
+                .statusCode(200)
+                .extract()
+                .asString()
+                .replace("\"", "");
     }
 }
