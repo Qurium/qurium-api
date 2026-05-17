@@ -32,22 +32,16 @@ public class DatabaseConnectionFactory {
         return openJdbc(url, connection.getUsername(), password);
     }
 
-    public void verify(
+    public Connection open(
             DatabaseConnectionType type,
             String host,
             Long port,
             String databaseName,
             String username,
             String password) {
-        String url = buildUrl(type, host, port, databaseName);
 
-        try (Connection ignored = openJdbc(url, username, password)) {
-            // connection opened successfully — credentials are valid
-        } catch (QuriumException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new QuriumException(DATABASE_CONNECTION_UNREACHABLE);
-        }
+        String url = buildUrl(type, host, port, databaseName);
+        return openJdbc(url, username, password);
     }
 
     private Connection openJdbc(String url, String username, String password) {

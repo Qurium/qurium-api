@@ -158,9 +158,9 @@ class DatabaseConnectionResourceTest {
 
     @Test
     void createConnection_unreachableHost_returns400() {
-        doThrow(new QuriumException(QuriumExceptionCode.DATABASE_CONNECTION_UNREACHABLE))
-                .when(connectionFactory)
-                .verify(any(), any(), any(), any(), any(), any());
+        when(connectionFactory.open(any(), any(), any(), any(), any(), any()))
+                .thenThrow(
+                        new QuriumException(QuriumExceptionCode.DATABASE_CONNECTION_UNREACHABLE));
 
         given().contentType(MediaType.APPLICATION_JSON)
                 .body(
@@ -292,6 +292,58 @@ class DatabaseConnectionResourceTest {
 
         given().when()
                 .delete(BASE_PATH + "/" + id)
+                .then()
+                .statusCode(404)
+                .body("code", equalTo(2001));
+    }
+
+    @Test
+    void testConnection_success_returns200() {
+        String id = createConnection();
+
+        given().when()
+                .post(BASE_PATH + "/" + id + "/test")
+                .then()
+                .statusCode(200)
+                .body("success", equalTo(true))
+                .body("message", equalTo("Connection established"))
+                .body("latencyMs", greaterThanOrEqualTo(0));
+    }
+
+    @Test
+    void testConnection_unreachable_returns200WithFailure() {
+        String id = createConnection();
+
+        when(connectionFactory.open(org.mockito.ArgumentMatchers.<org.qurium.connection.domain.DatabaseConnection>any()))
+                .thenThrow(
+                        new QuriumException(QuriumExceptionCode.DATABASE_CONNECTION_UNREACHABLE));
+
+        given().when()
+                .post(BASE_PATH + "/" + id + "/test")
+                .then()
+                .statusCode(200)
+                .body("success", equalTo(false))
+                .body("message", notNullValue())
+                .body("latencyMs", greaterThanOrEqualTo(0));
+    }
+
+    @Test
+    void testConnection_nonexistentId_returns404() {
+        given().when()
+                .post(BASE_PATH + "/" + NONEXISTENT_ID + "/test")
+                .then()
+                .statusCode(404)
+                .body("code", equalTo(2001));
+    }
+
+    @Test
+    void testConnection_deletedId_returns404() {
+        String id = createConnection();
+
+        given().when().delete(BASE_PATH + "/" + id).then().statusCode(204);
+
+        given().when()
+                .post(BASE_PATH + "/" + id + "/test")
                 .then()
                 .statusCode(404)
                 .body("code", equalTo(2001));

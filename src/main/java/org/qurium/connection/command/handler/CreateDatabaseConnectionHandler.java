@@ -2,9 +2,11 @@
 package org.qurium.connection.command.handler;
 
 import static org.qurium.common.exception.QuriumExceptionCode.DATABASE_CONNECTION_ALREADY_EXISTS;
+import static org.qurium.common.exception.QuriumExceptionCode.DATABASE_CONNECTION_UNREACHABLE;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
+import java.sql.Connection;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.qurium.common.CommandHandler;
@@ -40,13 +42,17 @@ public class CreateDatabaseConnectionHandler
                             throw new QuriumException(DATABASE_CONNECTION_ALREADY_EXISTS);
                         });
 
-        connectionFactory.verify(
+        try (Connection ignored = connectionFactory.open(
                 request.getType(),
                 request.getHost(),
                 request.getPort(),
                 request.getDatabaseName(),
                 request.getUsername(),
-                request.getPassword());
+                request.getPassword())) {
+
+        } catch (Exception e) {
+            throw new QuriumException(DATABASE_CONNECTION_UNREACHABLE);
+        }
 
         request.setPassword(encryptionService.encrypt(request.getPassword()));
         return connectionRepository.store(request);

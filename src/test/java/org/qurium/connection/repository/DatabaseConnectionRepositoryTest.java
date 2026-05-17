@@ -99,8 +99,8 @@ class DatabaseConnectionRepositoryTest {
     @Test
     @Transactional
     void findAll_returnsOnlyActiveConnections() {
-        repository.store(aRequest("Active A", null, null));
-        repository.store(aRequest("Active B", null, null));
+        repository.store(aRequest("Active A", "db_a", null, null));
+        repository.store(aRequest("Active B", "db_b", null, null));
 
         List<DatabaseConnection> results = repository.findAll().list();
 
@@ -113,8 +113,8 @@ class DatabaseConnectionRepositoryTest {
     @Test
     @Transactional
     void findAll_excludesSoftDeletedConnections() {
-        UUID activeId = repository.store(aRequest("Active", null, null));
-        UUID deletedId = repository.store(aRequest("Deleted", null, null));
+        UUID activeId = repository.store(aRequest("Active", "db_active", null, null));
+        UUID deletedId = repository.store(aRequest("Deleted", "db_deleted", null, null));
         DatabaseConnection toDelete = repository.findByIdOptional(deletedId).orElseThrow();
         toDelete.delete();
         repository.getEntityManager().flush();
@@ -133,7 +133,6 @@ class DatabaseConnectionRepositoryTest {
         assertThat(results).isEmpty();
     }
 
-    // findByUniqueDataOptional()
 
     @Test
     @Transactional
@@ -214,12 +213,17 @@ class DatabaseConnectionRepositoryTest {
 
     private CreateDatabaseConnectionRequest aRequest(
             String name, String username, String password) {
+        return aRequest(name, "testdb", username, password);
+    }
+
+    private CreateDatabaseConnectionRequest aRequest(
+            String name, String databaseName, String username, String password) {
         CreateDatabaseConnectionRequest request = new CreateDatabaseConnectionRequest();
         request.setName(name);
         request.setType(DatabaseConnectionType.POSTGRES);
         request.setHost("localhost");
         request.setPort(5432L);
-        request.setDatabaseName("testdb");
+        request.setDatabaseName(databaseName);
         request.setUsername(username);
         request.setPassword(password);
         return request;

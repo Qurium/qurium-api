@@ -18,9 +18,12 @@ import org.qurium.common.PaginatedResponse;
 import org.qurium.common.exception.QuriumErrorResponse;
 import org.qurium.connection.command.data.CreateDatabaseConnectionCommand;
 import org.qurium.connection.command.data.DeleteDatabaseConnectionCommand;
+import org.qurium.connection.command.data.TestDatabaseConnectionCommand;
 import org.qurium.connection.command.handler.CreateDatabaseConnectionHandler;
 import org.qurium.connection.command.handler.DeleteDatabaseConnectionHandler;
+import org.qurium.connection.command.handler.TestDatabaseConnectionHandler;
 import org.qurium.connection.dto.DatabaseConnectionDTO;
+import org.qurium.connection.dto.TestConnectionDTO;
 import org.qurium.connection.dto.requests.CreateDatabaseConnectionRequest;
 import org.qurium.connection.query.GetDatabaseConnection;
 import org.qurium.connection.query.ListDatabaseConnections;
@@ -33,6 +36,7 @@ public class DatabaseConnectionResource {
     private final CreateDatabaseConnectionHandler createDatabaseConnectionHandler;
     private final GetDatabaseConnection getDatabaseConnection;
     private final DeleteDatabaseConnectionHandler deleteDatabaseConnectionHandler;
+    private final TestDatabaseConnectionHandler testDatabaseConnectionHandler;
 
     @GET
     @Operation(
@@ -116,5 +120,23 @@ public class DatabaseConnectionResource {
 
         deleteDatabaseConnectionHandler.handle(new DeleteDatabaseConnectionCommand(id));
         return Response.noContent().build();
+    }
+
+    @POST
+    @Path("/{id}/test")
+    @Operation(
+            summary = "Test a database connection",
+            description = "Tests the connection of a stored database")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Database is connected successfully"),
+        @ApiResponse(
+                responseCode = "404",
+                description = "Could not re-establish the connection to the selected database",
+                content = @Content(schema = @Schema(implementation = QuriumErrorResponse.class)))
+    })
+    public TestConnectionDTO testConnection(
+            @Parameter(description = "connection id") @PathParam("id") UUID id) {
+
+        return testDatabaseConnectionHandler.handle(new TestDatabaseConnectionCommand(id));
     }
 }
