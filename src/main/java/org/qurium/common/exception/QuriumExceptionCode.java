@@ -22,7 +22,16 @@ public enum QuriumExceptionCode {
     DATABASE_CONNECTION_UNREACHABLE(
             2002, "Could not establish a connection to the database", Response.Status.BAD_REQUEST),
     DATABASE_CONNECTION_ALREADY_EXISTS(
-            2003, "This database connection already exists", Response.Status.CONFLICT);
+            2003, "This database connection already exists", Response.Status.CONFLICT),
+
+    // Schema
+    SCHEMA_NOT_FOUND(3001, "Schema not found for this connection", Response.Status.NOT_FOUND),
+    SCHEMA_IMPORT_FAILED(
+            3002, "Failed to import schema from database", Response.Status.BAD_REQUEST),
+    SCHEMA_PARSE_FAILED(
+            3003,
+            "Failed to parse DDL file. Ensure it contains valid CREATE TABLE statements.",
+            Response.Status.BAD_REQUEST);
 
     private final int errorCode;
     private final String errorMessage;
