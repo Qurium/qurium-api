@@ -18,4 +18,7 @@ CREATE TABLE IF NOT EXISTS database_connection
     deleted_at         TIMESTAMPTZ
 );
 
-CREATE INDEX idx_database_connection_type ON database_connection (type);
+CREATE INDEX IF NOT EXISTS idx_database_connection_type ON database_connection (type);
+
+ALTER TABLE IF EXISTS database_connection
+    ADD CONSTRAINT uq_connection_target UNIQUE (type, host, port, database_name);

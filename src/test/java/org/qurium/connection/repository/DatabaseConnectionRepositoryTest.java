@@ -23,7 +23,8 @@ class DatabaseConnectionRepositoryTest {
     @BeforeEach
     @Transactional
     void setUp() {
-        repository.getEntityManager()
+        repository
+                .getEntityManager()
                 .createNativeQuery("DELETE FROM database_connection")
                 .executeUpdate();
     }
@@ -98,8 +99,8 @@ class DatabaseConnectionRepositoryTest {
     @Test
     @Transactional
     void findAll_returnsOnlyActiveConnections() {
-        repository.store(aRequest("Active A", null, null));
-        repository.store(aRequest("Active B", null, null));
+        repository.store(aRequest("Active A", "db_a", null, null));
+        repository.store(aRequest("Active B", "db_b", null, null));
 
         List<DatabaseConnection> results = repository.findAll().list();
 
@@ -112,8 +113,8 @@ class DatabaseConnectionRepositoryTest {
     @Test
     @Transactional
     void findAll_excludesSoftDeletedConnections() {
-        UUID activeId = repository.store(aRequest("Active", null, null));
-        UUID deletedId = repository.store(aRequest("Deleted", null, null));
+        UUID activeId = repository.store(aRequest("Active", "db_active", null, null));
+        UUID deletedId = repository.store(aRequest("Deleted", "db_deleted", null, null));
         DatabaseConnection toDelete = repository.findByIdOptional(deletedId).orElseThrow();
         toDelete.delete();
         repository.getEntityManager().flush();
@@ -132,13 +133,97 @@ class DatabaseConnectionRepositoryTest {
         assertThat(results).isEmpty();
     }
 
-    private CreateDatabaseConnectionRequest aRequest(String name, String username, String password) {
+
+    @Test
+    @Transactional
+    void findByUniqueDataOptional_exactMatch_returnsConnection() {
+        UUID id = repository.store(aRequest("My Connection", null, null));
+
+        Optional<DatabaseConnection> result =
+                repository.findByUniqueDataOptional(
+                        "testdb", DatabaseConnectionType.POSTGRES, "localhost", 5432L);
+
+        assertThat(result).isPresent();
+        assertThat(result.get().getId()).isEqualTo(id);
+    }
+
+    @Test
+    @Transactional
+    void findByUniqueDataOptional_differentType_returnsEmpty() {
+        repository.store(aRequest("My Connection", null, null));
+
+        Optional<DatabaseConnection> result =
+                repository.findByUniqueDataOptional(
+                        "testdb", DatabaseConnectionType.MYSQL, "localhost", 5432L);
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @Transactional
+    void findByUniqueDataOptional_differentHost_returnsEmpty() {
+        repository.store(aRequest("My Connection", null, null));
+
+        Optional<DatabaseConnection> result =
+                repository.findByUniqueDataOptional(
+                        "testdb", DatabaseConnectionType.POSTGRES, "192.168.1.1", 5432L);
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @Transactional
+    void findByUniqueDataOptional_differentPort_returnsEmpty() {
+        repository.store(aRequest("My Connection", null, null));
+
+        Optional<DatabaseConnection> result =
+                repository.findByUniqueDataOptional(
+                        "testdb", DatabaseConnectionType.POSTGRES, "localhost", 5433L);
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @Transactional
+    void findByUniqueDataOptional_differentDatabaseName_returnsEmpty() {
+        repository.store(aRequest("My Connection", null, null));
+
+        Optional<DatabaseConnection> result =
+                repository.findByUniqueDataOptional(
+                        "other_db", DatabaseConnectionType.POSTGRES, "localhost", 5432L);
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @Transactional
+    void findByUniqueDataOptional_softDeletedMatch_returnsEmpty() {
+        UUID id = repository.store(aRequest("My Connection", null, null));
+        DatabaseConnection saved = repository.findByIdOptional(id).orElseThrow();
+        saved.delete();
+        repository.getEntityManager().flush();
+        repository.getEntityManager().clear();
+
+        Optional<DatabaseConnection> result =
+                repository.findByUniqueDataOptional(
+                        "testdb", DatabaseConnectionType.POSTGRES, "localhost", 5432L);
+
+        assertThat(result).isEmpty();
+    }
+
+    private CreateDatabaseConnectionRequest aRequest(
+            String name, String username, String password) {
+        return aRequest(name, "testdb", username, password);
+    }
+
+    private CreateDatabaseConnectionRequest aRequest(
+            String name, String databaseName, String username, String password) {
         CreateDatabaseConnectionRequest request = new CreateDatabaseConnectionRequest();
         request.setName(name);
         request.setType(DatabaseConnectionType.POSTGRES);
         request.setHost("localhost");
         request.setPort(5432L);
-        request.setDatabaseName("testdb");
+        request.setDatabaseName(databaseName);
         request.setUsername(username);
         request.setPassword(password);
         return request;

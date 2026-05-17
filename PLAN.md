@@ -132,6 +132,8 @@ public interface AiSqlService {
 - Builds JDBC URL from `DatabaseConnection.type/host/port/dbName`
 - Decrypts password via `EncryptionService`
 - Uses `DriverManager.getConnection` (no pooling — per-query connections only)
+- `verify(type, host, port, dbName, username, password)` — opens and immediately closes a connection to validate credentials; throws `DATABASE_CONNECTION_UNREACHABLE` (400) on failure
+- `open(DatabaseConnection)` — opens and returns a live `Connection` for query execution (caller is responsible for closing it)
 
 ---
 
@@ -143,8 +145,11 @@ public interface AiSqlService {
 3. `EncryptionService` + unit test
 4. `PagedResponse` record
 5. `DatabaseConnection` entity + `DatabaseType` enum → verify table creation
-6. Connections DTOs, commands, queries, handlers, `ConnectionResource`
-7. Smoke-test all connection endpoints
+6. `DatabaseConnectionFactory` — `verify()` + `open()`
+7. Connections DTOs, commands, queries, handlers, `ConnectionResource`
+   - `POST /api/connections` verifies the live connection before persisting; returns 400 (`DATABASE_CONNECTION_UNREACHABLE`) if unreachable
+   - `POST /api/connections/{id}/test` re-tests an already-saved connection (e.g. after a password rotation or server restart)
+8. Smoke-test all connection endpoints
 
 **Phase 2 — Schema**
 8. `Schema` entity + `SchemaSource` enum

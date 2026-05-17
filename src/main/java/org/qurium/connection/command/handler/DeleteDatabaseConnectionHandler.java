@@ -5,7 +5,6 @@ import static org.qurium.common.exception.QuriumExceptionCode.DATABASE_CONNECTIO
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
-import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.qurium.common.CommandHandler;
 import org.qurium.common.exception.QuriumException;

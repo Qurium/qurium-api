@@ -4,11 +4,11 @@ package org.qurium.connection.repository;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.qurium.connection.domain.DatabaseConnection;
+import org.qurium.connection.domain.DatabaseConnectionType;
 import org.qurium.connection.dto.requests.CreateDatabaseConnectionRequest;
 
 @ApplicationScoped
@@ -30,5 +30,17 @@ public class DatabaseConnectionRepository
         persist(newConnection);
 
         return newConnection.getId();
+    }
+
+    public Optional<DatabaseConnection> findByUniqueDataOptional(
+            String databaseName, DatabaseConnectionType type, String host, Long port) {
+
+        return find(
+                        "databaseName = ?1 AND type = ?2 AND host = ?3 AND port = ?4",
+                        databaseName,
+                        type,
+                        host,
+                        port)
+                .firstResultOptional();
     }
 }
