@@ -1,0 +1,29 @@
+/* Qurium - 2026 */
+package org.qurium.schema.domain;
+
+import jakarta.persistence.*;
+import java.util.UUID;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.qurium.common.BaseEntity;
+import org.qurium.connection.domain.DatabaseConnection;
+
+@Entity
+@Table(name = "schema")
+@Getter
+@Setter
+@NoArgsConstructor
+public class Schema extends BaseEntity {
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "connection_id", nullable = false)
+    private DatabaseConnection connection;
+
+    @Column(name = "schema_json", columnDefinition = "TEXT", nullable = false)
+    private String schemaJson;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source", nullable = false)
+    private SchemaSource source;
+}
