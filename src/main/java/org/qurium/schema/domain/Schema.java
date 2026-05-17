@@ -2,7 +2,6 @@
 package org.qurium.schema.domain;
 
 import jakarta.persistence.*;
-import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
