@@ -1,6 +1,8 @@
 /* Qurium - 2026 */
 package org.qurium.schema;
 
+import static java.nio.file.Files.readString;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -23,8 +25,6 @@ import org.qurium.schema.command.handler.UploadSchemaDDLHandler;
 import org.qurium.schema.dto.SchemaDTO;
 import org.qurium.schema.query.GetSchema;
 import org.qurium.schema.service.DDLParserService;
-
-import static java.nio.file.Files.readString;
 
 @Path("/api/connections/{connectionId}/schema")
 @RequiredArgsConstructor
