@@ -12,7 +12,7 @@ Qurium is an API that lets users connect to external databases, import their sch
 org.qurium/
 ├── common/
 │   ├── EncryptionService.java        # AES-GCM encrypt/decrypt for DB passwords
-│   └── PagedResponse.java            # generic record(items, total, page, size)
+│   └── PagedResponse.java            # generic Nrecord(items, total, page, size)
 ├── connections/
 │   ├── domain/DatabaseConnection.java  # PanacheEntity
 │   ├── command/  CreateConnectionCommand, DeleteConnectionCommand + handlers
