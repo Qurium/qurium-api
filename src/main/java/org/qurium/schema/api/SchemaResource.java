@@ -1,5 +1,5 @@
 /* Qurium - 2026 */
-package org.qurium.schema;
+package org.qurium.schema.api;
 
 import static java.nio.file.Files.readString;
 

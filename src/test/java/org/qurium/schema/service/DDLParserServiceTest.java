@@ -31,7 +31,9 @@ class DDLParserServiceTest {
 
     @Test
     void parse_createTable_extractsColumns() throws Exception {
-        String ddl = "CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(255), email VARCHAR(255) NOT NULL);";
+        String ddl =
+                "CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(255), email VARCHAR(255)"
+                        + " NOT NULL);";
 
         List<Map<String, Object>> result = parse(ddl);
 
@@ -44,7 +46,9 @@ class DDLParserServiceTest {
 
     @Test
     void parse_createTable_setsNullableCorrectly() throws Exception {
-        String ddl = "CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(255), email VARCHAR(255) NOT NULL);";
+        String ddl =
+                "CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(255), email VARCHAR(255)"
+                        + " NOT NULL);";
 
         List<Map<String, Object>> result = parse(ddl);
 
@@ -55,7 +59,8 @@ class DDLParserServiceTest {
 
     @Test
     void parse_createTable_multipleTablesExtracted() throws Exception {
-        String ddl = """
+        String ddl =
+                """
                 CREATE TABLE users (id SERIAL PRIMARY KEY);
                 CREATE TABLE orders (id SERIAL PRIMARY KEY);
                 """;
@@ -63,7 +68,8 @@ class DDLParserServiceTest {
         List<Map<String, Object>> result = parse(ddl);
 
         assertThat(result).hasSize(2);
-        assertThat(result).extracting(t -> t.get("table"))
+        assertThat(result)
+                .extracting(t -> t.get("table"))
                 .containsExactlyInAnyOrder("users", "orders");
     }
 
@@ -79,7 +85,8 @@ class DDLParserServiceTest {
 
     @Test
     void parse_createTable_skipsInlineConstraints() throws Exception {
-        String ddl = """
+        String ddl =
+                """
                 CREATE TABLE orders (
                     id SERIAL,
                     user_id INT,
@@ -98,7 +105,8 @@ class DDLParserServiceTest {
 
     @Test
     void parse_alterAddColumn_appendsColumnToExistingTable() throws Exception {
-        String ddl = """
+        String ddl =
+                """
                 CREATE TABLE users (id SERIAL PRIMARY KEY);
                 ALTER TABLE users ADD COLUMN email VARCHAR(255);
                 """;
@@ -107,12 +115,15 @@ class DDLParserServiceTest {
 
         List<Map<String, String>> columns = columns(result, "users");
         assertThat(columns).hasSize(2);
-        assertThat(columns.get(1)).containsEntry("name", "email").containsEntry("type", "VARCHAR(255)");
+        assertThat(columns.get(1))
+                .containsEntry("name", "email")
+                .containsEntry("type", "VARCHAR(255)");
     }
 
     @Test
     void parse_alterAddColumn_notNullSetCorrectly() throws Exception {
-        String ddl = """
+        String ddl =
+                """
                 CREATE TABLE users (id SERIAL PRIMARY KEY);
                 ALTER TABLE users ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE;
                 """;
@@ -125,7 +136,8 @@ class DDLParserServiceTest {
 
     @Test
     void parse_alterAddColumn_unknownTableIgnored() throws Exception {
-        String ddl = """
+        String ddl =
+                """
                 CREATE TABLE users (id SERIAL PRIMARY KEY);
                 ALTER TABLE nonexistent ADD COLUMN foo VARCHAR(10);
                 """;
@@ -137,7 +149,8 @@ class DDLParserServiceTest {
 
     @Test
     void parse_alterAddForeignKey_addsConstraint() throws Exception {
-        String ddl = """
+        String ddl =
+                """
                 CREATE TABLE users (id SERIAL PRIMARY KEY);
                 CREATE TABLE orders (id SERIAL PRIMARY KEY, user_id INT);
                 ALTER TABLE orders ADD CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES users(id);
@@ -157,7 +170,8 @@ class DDLParserServiceTest {
 
     @Test
     void parse_alterAddUniqueConstraint_addsConstraint() throws Exception {
-        String ddl = """
+        String ddl =
+                """
                 CREATE TABLE users (id SERIAL PRIMARY KEY, email VARCHAR(255));
                 ALTER TABLE users ADD CONSTRAINT uq_users_email UNIQUE (email);
                 """;
@@ -174,7 +188,8 @@ class DDLParserServiceTest {
 
     @Test
     void parse_createIndex_addsIndexToTable() throws Exception {
-        String ddl = """
+        String ddl =
+                """
                 CREATE TABLE orders (id SERIAL PRIMARY KEY, status VARCHAR(50));
                 CREATE INDEX idx_orders_status ON orders (status);
                 """;
@@ -191,7 +206,8 @@ class DDLParserServiceTest {
 
     @Test
     void parse_createUniqueIndex_markedAsUnique() throws Exception {
-        String ddl = """
+        String ddl =
+                """
                 CREATE TABLE users (id SERIAL PRIMARY KEY, email VARCHAR(255));
                 CREATE UNIQUE INDEX idx_users_email ON users (email);
                 """;
@@ -204,7 +220,8 @@ class DDLParserServiceTest {
 
     @Test
     void parse_insertInto_extractsSampleData() throws Exception {
-        String ddl = """
+        String ddl =
+                """
                 CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(255));
                 INSERT INTO users (id, name) VALUES (1, 'Alice'), (2, 'Bob');
                 """;
@@ -219,7 +236,8 @@ class DDLParserServiceTest {
 
     @Test
     void parse_insertInto_unknownTableIgnored() throws Exception {
-        String ddl = """
+        String ddl =
+                """
                 CREATE TABLE users (id SERIAL PRIMARY KEY);
                 INSERT INTO nonexistent (id) VALUES (1);
                 """;
@@ -233,14 +251,12 @@ class DDLParserServiceTest {
     void parse_noCreateTable_throwsException() {
         String ddl = "INSERT INTO users (id) VALUES (1);";
 
-        assertThatThrownBy(() -> parser.parse(ddl))
-                .isInstanceOf(QuriumException.class);
+        assertThatThrownBy(() -> parser.parse(ddl)).isInstanceOf(QuriumException.class);
     }
 
     @Test
     void parse_emptyString_throwsException() {
-        assertThatThrownBy(() -> parser.parse(""))
-                .isInstanceOf(QuriumException.class);
+        assertThatThrownBy(() -> parser.parse("")).isInstanceOf(QuriumException.class);
     }
 
     private List<Map<String, Object>> parse(String ddl) throws Exception {
@@ -258,7 +274,8 @@ class DDLParserServiceTest {
     }
 
     @SuppressWarnings("unchecked")
-    private List<Map<String, Object>> constraints(List<Map<String, Object>> tables, String tableName) {
+    private List<Map<String, Object>> constraints(
+            List<Map<String, Object>> tables, String tableName) {
         return tables.stream()
                 .filter(t -> tableName.equals(t.get("table")))
                 .findFirst()
@@ -276,7 +293,8 @@ class DDLParserServiceTest {
     }
 
     @SuppressWarnings("unchecked")
-    private List<Map<String, String>> sampleData(List<Map<String, Object>> tables, String tableName) {
+    private List<Map<String, String>> sampleData(
+            List<Map<String, Object>> tables, String tableName) {
         return tables.stream()
                 .filter(t -> tableName.equals(t.get("table")))
                 .findFirst()
