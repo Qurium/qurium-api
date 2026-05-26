@@ -1,5 +1,5 @@
 /* Qurium - 2026 */
-package org.qurium.connection;
+package org.qurium.connection.api;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

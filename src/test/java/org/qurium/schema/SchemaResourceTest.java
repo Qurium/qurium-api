@@ -67,7 +67,8 @@ class SchemaResourceTest {
         String connectionId = createConnection();
 
         when(connectionFactory.open(any(org.qurium.connection.domain.DatabaseConnection.class)))
-                .thenThrow(new QuriumException(QuriumExceptionCode.DATABASE_CONNECTION_UNREACHABLE));
+                .thenThrow(
+                        new QuriumException(QuriumExceptionCode.DATABASE_CONNECTION_UNREACHABLE));
 
         given().when()
                 .post(schemaPath(connectionId) + "/introspect")
@@ -120,8 +121,13 @@ class SchemaResourceTest {
         String connectionId = createConnection();
 
         given().contentType(MediaType.MULTIPART_FORM_DATA)
-                .multiPart("file", new File(getClass().getClassLoader()
-                        .getResource("invalidDDLTestFile.sql").getFile()))
+                .multiPart(
+                        "file",
+                        new File(
+                                getClass()
+                                        .getClassLoader()
+                                        .getResource("invalidDDLTestFile.sql")
+                                        .getFile()))
                 .when()
                 .post(schemaPath(connectionId))
                 .then()
