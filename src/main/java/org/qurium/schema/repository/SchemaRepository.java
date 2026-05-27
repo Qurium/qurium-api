@@ -23,6 +23,10 @@ public class SchemaRepository implements PanacheRepositoryBase<Schema, UUID> {
         return schema.getId();
     }
 
+    public UUID store(String schemaJson, SchemaSource source) {
+        return store(null, schemaJson, source);
+    }
+
     public Optional<Schema> findByConnectionId(UUID connectionId) {
         return find("connection.id", connectionId).firstResultOptional();
     }

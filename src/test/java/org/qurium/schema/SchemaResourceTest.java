@@ -12,8 +12,6 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.MediaType;
-import java.io.File;
-import java.net.URL;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -93,74 +91,6 @@ class SchemaResourceTest {
     }
 
     @Test
-    void uploadDDL_validFile_returnsSchemaId() {
-        String connectionId = createConnection();
-
-        given().contentType(MediaType.MULTIPART_FORM_DATA)
-                .multiPart("file", ddlTestFile())
-                .when()
-                .post(schemaPath(connectionId))
-                .then()
-                .statusCode(200)
-                .body(matchesPattern(UUID_PATTERN));
-    }
-
-    @Test
-    void uploadDDL_nonexistentConnection_returns404() {
-        given().contentType(MediaType.MULTIPART_FORM_DATA)
-                .multiPart("file", ddlTestFile())
-                .when()
-                .post(schemaPath(NONEXISTENT_ID))
-                .then()
-                .statusCode(404)
-                .body("code", equalTo(2001));
-    }
-
-    @Test
-    void uploadDDL_invalidFile_returns400() {
-        String connectionId = createConnection();
-
-        given().contentType(MediaType.MULTIPART_FORM_DATA)
-                .multiPart(
-                        "file",
-                        new File(
-                                getClass()
-                                        .getClassLoader()
-                                        .getResource("invalidDDLTestFile.sql")
-                                        .getFile()))
-                .when()
-                .post(schemaPath(connectionId))
-                .then()
-                .statusCode(400)
-                .body("code", equalTo(3003));
-    }
-
-    @Test
-    void uploadDDL_replacesExistingSchema() {
-        String connectionId = createConnection();
-
-        given().contentType(MediaType.MULTIPART_FORM_DATA)
-                .multiPart("file", ddlTestFile())
-                .when()
-                .post(schemaPath(connectionId))
-                .then()
-                .statusCode(200);
-
-        given().contentType(MediaType.MULTIPART_FORM_DATA)
-                .multiPart("file", ddlTestFile())
-                .when()
-                .post(schemaPath(connectionId))
-                .then()
-                .statusCode(200);
-
-        given().when()
-                .get(schemaPath(connectionId))
-                .then()
-                .statusCode(200)
-                .body("source", equalTo("UPLOADED_DDL"));
-    }
-
-    @Test
     void getSchema_afterIntrospect_returnsSchema() throws Exception {
         String connectionId = createConnection();
         mockSuccessfulIntrospection();
@@ -176,26 +106,6 @@ class SchemaResourceTest {
                 .body("schemaJson", notNullValue())
                 .body("source", equalTo("CONNECTED"))
                 .body("createdAt", notNullValue());
-    }
-
-    @Test
-    void getSchema_afterUpload_returnsSchema() {
-        String connectionId = createConnection();
-
-        given().contentType(MediaType.MULTIPART_FORM_DATA)
-                .multiPart("file", ddlTestFile())
-                .when()
-                .post(schemaPath(connectionId))
-                .then()
-                .statusCode(200);
-
-        given().when()
-                .get(schemaPath(connectionId))
-                .then()
-                .statusCode(200)
-                .body("connectionId", equalTo(connectionId))
-                .body("source", equalTo("UPLOADED_DDL"))
-                .body("schemaJson", notNullValue());
     }
 
     @Test
@@ -218,6 +128,8 @@ class SchemaResourceTest {
                 .body("code", equalTo(3001));
     }
 
+    // ── helpers ──────────────────────────────────────────────────────────────
+
     private String schemaPath(String connectionId) {
         return CONNECTIONS_PATH + "/" + connectionId + "/schema";
     }
@@ -232,12 +144,6 @@ class SchemaResourceTest {
                 .extract()
                 .asString()
                 .replace("\"", "");
-    }
-
-    private File ddlTestFile() {
-        URL resource = getClass().getClassLoader().getResource("uploadDDLTestFile.sql");
-        if (resource == null) throw new IllegalStateException("uploadDDLTestFile.sql not found");
-        return new File(resource.getFile());
     }
 
     private void mockSuccessfulIntrospection() throws Exception {

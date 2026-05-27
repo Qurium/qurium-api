@@ -9,31 +9,31 @@ import org.qurium.common.CommandHandler;
 import org.qurium.common.exception.QuriumException;
 import org.qurium.nlquery.ai.AiSqlResponse;
 import org.qurium.nlquery.ai.AiSqlService;
-import org.qurium.nlquery.command.data.ExecuteNlQueryCommand;
+import org.qurium.nlquery.command.data.ExecuteSchemaQueryCommand;
 import org.qurium.nlquery.dto.ExecuteNlQueryResponseDTO;
 import org.qurium.schema.domain.Schema;
 import org.qurium.schema.repository.SchemaRepository;
 
 @ApplicationScoped
 @RequiredArgsConstructor
-public class ExecuteNlQueryHandler
-        implements CommandHandler<ExecuteNlQueryCommand, ExecuteNlQueryResponseDTO> {
+public class ExecuteSchemaQueryHandler
+        implements CommandHandler<ExecuteSchemaQueryCommand, ExecuteNlQueryResponseDTO> {
 
     private final SchemaRepository schemaRepository;
-    private final AiSqlService sqlService;
+    private final AiSqlService aiSqlService;
 
     @Override
-    public ExecuteNlQueryResponseDTO handle(ExecuteNlQueryCommand command) {
+    public ExecuteNlQueryResponseDTO handle(ExecuteSchemaQueryCommand command) {
 
         Schema schema =
                 schemaRepository
-                        .findByConnectionId(command.connectionId())
+                        .findByIdOptional(command.schemaId())
                         .orElseThrow(() -> new QuriumException(SCHEMA_NOT_FOUND));
 
-        AiSqlResponse sqlResponse =
-                sqlService.generateSql(schema.getSchemaJson(), command.question());
+        AiSqlResponse aiResponse =
+                aiSqlService.generateSql(schema.getSchemaJson(), command.question());
 
         return new ExecuteNlQueryResponseDTO(
-                sqlResponse.sql(), sqlResponse.explanation(), sqlResponse.resultSnapshot(), true);
+                aiResponse.sql(), aiResponse.explanation(), null, false);
     }
 }
