@@ -12,9 +12,9 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.MediaType;
-import java.io.File;
-import java.net.URL;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -41,10 +41,10 @@ class NlQueryResourceTest {
     }
 
     @Test
-    void executeQuery_withSchema_returnsSqlAndExplanation() {
+    void executeQuery_withSchema_returnsSqlAndExplanation() throws Exception {
         String connectionId = createConnectionWithSchema();
         when(MockAiSqlService.instance().generateSql(any(), any()))
-                .thenReturn(new AiSqlResponse("SELECT * FROM users", "Returns all users"));
+                .thenReturn(new AiSqlResponse("SELECT * FROM users", "Returns all users", null));
 
         given().contentType(MediaType.APPLICATION_JSON)
                 .body(
@@ -56,7 +56,9 @@ class NlQueryResourceTest {
                 .then()
                 .statusCode(200)
                 .body("sql", equalTo("SELECT * FROM users"))
-                .body("explanation", equalTo("Returns all users"));
+                .body("explanation", equalTo("Returns all users"))
+                .body("executed", equalTo(true))
+                .body("resultSnapshot", nullValue());
     }
 
     @Test
@@ -90,7 +92,7 @@ class NlQueryResourceTest {
     }
 
     @Test
-    void executeQuery_aiServiceFails_returns500() {
+    void executeQuery_aiServiceFails_returns500() throws Exception {
         String connectionId = createConnectionWithSchema();
         when(MockAiSqlService.instance().generateSql(any(), any()))
                 .thenThrow(new RuntimeException("AI service unavailable"));
@@ -134,21 +136,25 @@ class NlQueryResourceTest {
                 .replace("\"", "");
     }
 
-    private String createConnectionWithSchema() {
+    private String createConnectionWithSchema() throws Exception {
         String connectionId = createConnection();
-        given().contentType(MediaType.MULTIPART_FORM_DATA)
-                .multiPart("file", ddlTestFile())
-                .when()
-                .post(CONNECTIONS_PATH + "/" + connectionId + "/schema")
+        mockSuccessfulIntrospection();
+        given().when()
+                .post(CONNECTIONS_PATH + "/" + connectionId + "/schema/introspect")
                 .then()
                 .statusCode(200);
         return connectionId;
     }
 
-    private File ddlTestFile() {
-        URL resource = getClass().getClassLoader().getResource("uploadDDLTestFile.sql");
-        if (resource == null) throw new IllegalStateException("uploadDDLTestFile.sql not found");
-        return new File(resource.getFile());
+    private void mockSuccessfulIntrospection() throws Exception {
+        ResultSet rs = Mockito.mock(ResultSet.class);
+        when(rs.next()).thenReturn(false);
+        DatabaseMetaData metaData = Mockito.mock(DatabaseMetaData.class);
+        when(metaData.getTables(any(), any(), any(), any())).thenReturn(rs);
+        Connection jdbc = Mockito.mock(Connection.class);
+        when(jdbc.getMetaData()).thenReturn(metaData);
+        when(connectionFactory.open(any(org.qurium.connection.domain.DatabaseConnection.class)))
+                .thenReturn(jdbc);
     }
 
     private static final String VALID_CONNECTION_BODY =

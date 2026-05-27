@@ -16,7 +16,7 @@ import org.qurium.connection.domain.DatabaseConnection;
 public class Schema extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "connection_id", nullable = false)
+    @JoinColumn(name = "connection_id")
     private DatabaseConnection connection;
 
     @Column(name = "schema_json", columnDefinition = "TEXT", nullable = false)
