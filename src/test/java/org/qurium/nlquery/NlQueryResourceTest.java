@@ -36,6 +36,7 @@ class NlQueryResourceTest {
     void cleanUp() throws Exception {
         MockAiSqlService.reset();
         when(connectionFactory.open(any())).thenReturn(Mockito.mock(Connection.class));
+        entityManager.createNativeQuery("DELETE FROM nl_query").executeUpdate();
         entityManager.createNativeQuery("DELETE FROM schema").executeUpdate();
         entityManager.createNativeQuery("DELETE FROM database_connection").executeUpdate();
     }
@@ -105,7 +106,8 @@ class NlQueryResourceTest {
                 .when()
                 .post(queryPath(connectionId))
                 .then()
-                .statusCode(500);
+                .statusCode(500)
+                .body("code", equalTo(4001));
     }
 
     @Test
