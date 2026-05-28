@@ -31,7 +31,11 @@ public enum QuriumExceptionCode {
     SCHEMA_PARSE_FAILED(
             3003,
             "Failed to parse DDL file. Ensure it contains valid CREATE TABLE statements.",
-            Response.Status.BAD_REQUEST);
+            Response.Status.BAD_REQUEST),
+
+    // NL Query
+    NL_QUERY_AI_FAILED(
+            4001, "AI service failed to generate SQL", Response.Status.INTERNAL_SERVER_ERROR);
 
     private final int errorCode;
     private final String errorMessage;
