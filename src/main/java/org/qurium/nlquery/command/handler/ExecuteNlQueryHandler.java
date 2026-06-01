@@ -45,7 +45,7 @@ public class ExecuteNlQueryHandler
                     NlQueryStatus.SUCCESS, null);
 
             return new ExecuteNlQueryResponseDTO(
-                    sqlResponse.sql(), sqlResponse.explanation(), null, true);
+                    sqlResponse.sql(), sqlResponse.explanation(), sqlResponse.resultSnapshot(), true);
 
         } catch (Exception e) {
             nlQueryRepository.store(schema.getConnection(), command.question(),
