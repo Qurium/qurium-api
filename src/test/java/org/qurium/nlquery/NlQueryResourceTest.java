@@ -38,6 +38,7 @@ class NlQueryResourceTest {
         when(connectionFactory.open(any())).thenReturn(Mockito.mock(Connection.class));
         entityManager.createNativeQuery("DELETE FROM nl_query").executeUpdate();
         entityManager.createNativeQuery("DELETE FROM schema").executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM uploaded_file").executeUpdate();
         entityManager.createNativeQuery("DELETE FROM database_connection").executeUpdate();
     }
 

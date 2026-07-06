@@ -35,7 +35,10 @@ public enum QuriumExceptionCode {
 
     // NL Query
     NL_QUERY_AI_FAILED(
-            4001, "AI service failed to generate SQL", Response.Status.INTERNAL_SERVER_ERROR);
+            4001, "AI service failed to generate SQL", Response.Status.INTERNAL_SERVER_ERROR),
+
+    // Uploaded File
+    UPLOADED_FILE_NOT_FOUND(5001, "Uploaded file not found", Response.Status.NOT_FOUND);
 
     private final int errorCode;
     private final String errorMessage;
