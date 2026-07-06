@@ -53,7 +53,7 @@ public class DatabaseConnectionFactory {
         }
     }
 
-    private String buildUrl(
+    public String buildUrl(
             DatabaseConnectionType type, String host, Long port, String databaseName) {
 
         return switch (type) {

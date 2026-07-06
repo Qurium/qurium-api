@@ -3,8 +3,11 @@ package org.qurium.schema.repository;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.qurium.connection.domain.DatabaseConnection;
 import org.qurium.schema.domain.Schema;
 import org.qurium.schema.domain.SchemaSource;
@@ -29,5 +32,32 @@ public class SchemaRepository implements PanacheRepositoryBase<Schema, UUID> {
 
     public Optional<Schema> findByConnectionId(UUID connectionId) {
         return find("connection.id", connectionId).firstResultOptional();
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<UUID, Integer> findTableCountsByConnectionId() {
+        List<Object[]> rows = getEntityManager()
+                .createNativeQuery(
+                        "SELECT connection_id, json_array_length(schema_json::json)"
+                        + " FROM \"schema\""
+                        + " WHERE connection_id IS NOT NULL AND deleted_at IS NULL")
+                .getResultList();
+
+        return rows.stream()
+                .collect(Collectors.toMap(
+                        row -> (UUID) row[0],
+                        row -> ((Number) row[1]).intValue()));
+    }
+
+    public Optional<Integer> findTableCountByConnectionId(UUID connectionId) {
+        return getEntityManager()
+                .createNativeQuery(
+                        "SELECT json_array_length(schema_json::json)"
+                        + " FROM \"schema\""
+                        + " WHERE connection_id = ?1 AND deleted_at IS NULL")
+                .setParameter(1, connectionId)
+                .getResultStream()
+                .findFirst()
+                .map(r -> ((Number) r).intValue());
     }
 }

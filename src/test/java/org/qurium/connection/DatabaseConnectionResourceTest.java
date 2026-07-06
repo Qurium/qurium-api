@@ -47,6 +47,36 @@ class DatabaseConnectionResourceTest {
     }
 
     @Test
+    void listConnections_reachableConnection_returnsIsConnectedTrueAndNullTableCount() {
+        createConnection();
+
+        given().queryParam("page", 0)
+                .queryParam("size", 10)
+                .when()
+                .get(BASE_PATH)
+                .then()
+                .statusCode(200)
+                .body("content[0].isConnected", equalTo(true))
+                .body("content[0].tableCount", nullValue());
+    }
+
+    @Test
+    void listConnections_unreachableConnection_returnsIsConnectedFalse() {
+        createConnection();
+
+        when(connectionFactory.open(any()))
+                .thenThrow(new QuriumException(QuriumExceptionCode.DATABASE_CONNECTION_UNREACHABLE));
+
+        given().queryParam("page", 0)
+                .queryParam("size", 10)
+                .when()
+                .get(BASE_PATH)
+                .then()
+                .statusCode(200)
+                .body("content[0].isConnected", equalTo(false));
+    }
+
+    @Test
     void listConnections_doesNotReturnDeletedConnections() {
         String id = createConnection();
 
@@ -94,7 +124,23 @@ class DatabaseConnectionResourceTest {
                 .body("type", equalTo("POSTGRES"))
                 .body("host", equalTo("192.168.1.100"))
                 .body("port", equalTo(5432))
-                .body("databaseName", equalTo("mydb"));
+                .body("databaseName", equalTo("mydb"))
+                .body("isConnected", equalTo(true))
+                .body("tableCount", nullValue());
+    }
+
+    @Test
+    void getConnection_unreachable_returnsIsConnectedFalse() {
+        String id = createConnection();
+
+        when(connectionFactory.open(org.mockito.ArgumentMatchers.<org.qurium.connection.domain.DatabaseConnection>any()))
+                .thenThrow(new QuriumException(QuriumExceptionCode.DATABASE_CONNECTION_UNREACHABLE));
+
+        given().when()
+                .get(BASE_PATH + "/" + id)
+                .then()
+                .statusCode(200)
+                .body("isConnected", equalTo(false));
     }
 
     @Test
