@@ -19,12 +19,16 @@ import org.qurium.common.exception.QuriumErrorResponse;
 import org.qurium.connection.command.data.CreateDatabaseConnectionCommand;
 import org.qurium.connection.command.data.DeleteDatabaseConnectionCommand;
 import org.qurium.connection.command.data.TestDatabaseConnectionCommand;
+import org.qurium.connection.command.data.TestNewDatabaseConnectionCommand;
 import org.qurium.connection.command.handler.CreateDatabaseConnectionHandler;
 import org.qurium.connection.command.handler.DeleteDatabaseConnectionHandler;
 import org.qurium.connection.command.handler.TestDatabaseConnectionHandler;
+import org.qurium.connection.command.handler.TestNewDatabaseConnectionHandler;
 import org.qurium.connection.dto.DatabaseConnectionDTO;
 import org.qurium.connection.dto.TestConnectionDTO;
+import org.qurium.connection.dto.TestNewConnectionDTO;
 import org.qurium.connection.dto.requests.CreateDatabaseConnectionRequest;
+import org.qurium.connection.dto.requests.TestNewDatabaseConnectionRequest;
 import org.qurium.connection.query.GetDatabaseConnection;
 import org.qurium.connection.query.ListDatabaseConnections;
 
@@ -37,6 +41,7 @@ public class DatabaseConnectionResource {
     private final GetDatabaseConnection getDatabaseConnection;
     private final DeleteDatabaseConnectionHandler deleteDatabaseConnectionHandler;
     private final TestDatabaseConnectionHandler testDatabaseConnectionHandler;
+    private final TestNewDatabaseConnectionHandler testNewDatabaseConnectionHandler;
 
     @GET
     @Operation(
@@ -138,5 +143,26 @@ public class DatabaseConnectionResource {
             @Parameter(description = "connection id") @PathParam("id") UUID id) {
 
         return testDatabaseConnectionHandler.handle(new TestDatabaseConnectionCommand(id));
+    }
+
+    @POST
+    @Path("/test")
+    @Operation(
+            summary = "Test new connection credentials",
+            description = "Tests whether the provided connection details can reach the database."
+                    + " Returns true if reachable, false otherwise.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Connectivity result returned")
+    })
+    public TestNewConnectionDTO testNewConnection(@Valid TestNewDatabaseConnectionRequest request) {
+
+        return testNewDatabaseConnectionHandler.handle(
+                new TestNewDatabaseConnectionCommand(
+                        request.getType(),
+                        request.getHost(),
+                        request.getPort(),
+                        request.getDatabaseName(),
+                        request.getUsername(),
+                        request.getPassword()));
     }
 }
