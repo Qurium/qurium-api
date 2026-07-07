@@ -12,5 +12,8 @@ public record DatabaseConnectionDTO(
         String host,
         Long port,
         String databaseName,
+        String username,
+        Integer tableCount,
+        boolean isConnected,
         Instant createdAt,
         Instant updatedAt) {}

@@ -40,16 +40,30 @@ public class ExecuteNlQueryHandler
             AiSqlResponse sqlResponse =
                     sqlService.generateSql(schema.getSchemaJson(), command.question());
 
-            nlQueryRepository.store(schema.getConnection(), command.question(),
-                    sqlResponse.sql(), null, sqlResponse.explanation(),
-                    NlQueryStatus.SUCCESS, null);
+            nlQueryRepository.store(
+                    schema.getConnection(),
+                    command.question(),
+                    sqlResponse.sql(),
+                    null,
+                    sqlResponse.explanation(),
+                    NlQueryStatus.SUCCESS,
+                    null);
 
             return new ExecuteNlQueryResponseDTO(
-                    sqlResponse.sql(), sqlResponse.explanation(), sqlResponse.resultSnapshot(), true);
+                    sqlResponse.sql(),
+                    sqlResponse.explanation(),
+                    sqlResponse.resultSnapshot(),
+                    true);
 
         } catch (Exception e) {
-            nlQueryRepository.store(schema.getConnection(), command.question(),
-                    null, null, null, NlQueryStatus.FAILED, e.getMessage());
+            nlQueryRepository.store(
+                    schema.getConnection(),
+                    command.question(),
+                    null,
+                    null,
+                    null,
+                    NlQueryStatus.FAILED,
+                    e.getMessage());
 
             throw new QuriumException(NL_QUERY_AI_FAILED);
         }

@@ -6,4 +6,9 @@ import java.util.UUID;
 import org.qurium.schema.domain.SchemaSource;
 
 public record SchemaDTO(
-        UUID id, UUID connectionId, String schemaJson, SchemaSource source, Instant createdAt) {}
+        UUID id,
+        UUID connectionId,
+        UUID uploadedFileId,
+        String schemaJson,
+        SchemaSource source,
+        Instant createdAt) {}

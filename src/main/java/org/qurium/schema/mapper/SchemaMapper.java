@@ -10,5 +10,6 @@ import org.qurium.schema.dto.SchemaDTO;
 public interface SchemaMapper {
 
     @Mapping(source = "connection.id", target = "connectionId")
+    @Mapping(source = "uploadedFile.id", target = "uploadedFileId")
     SchemaDTO toDTO(Schema schema);
 }

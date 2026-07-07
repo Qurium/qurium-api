@@ -11,8 +11,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.MediaType;
-import java.io.File;
-import java.net.URL;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.qurium.nlquery.ai.AiSqlResponse;
@@ -22,9 +21,9 @@ import org.qurium.nlquery.ai.MockAiSqlService;
 class StandaloneSchemaResourceTest {
 
     private static final String SCHEMA_PATH = "/api/schema";
-    private static final String UUID_PATTERN =
-            "\"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\"";
     private static final String NONEXISTENT_ID = "00000000-0000-0000-0000-000000000099";
+    private static final String SAMPLE_SCHEMA_JSON =
+            "[{\"table\":\"users\",\"columns\":[{\"name\":\"id\",\"type\":\"UUID\"}]}]";
 
     @Inject EntityManager entityManager;
 
@@ -32,41 +31,22 @@ class StandaloneSchemaResourceTest {
     @Transactional
     void cleanUp() {
         MockAiSqlService.reset();
+        entityManager.createNativeQuery("DELETE FROM nl_query").executeUpdate();
         entityManager.createNativeQuery("DELETE FROM schema").executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM uploaded_file").executeUpdate();
     }
 
     @Test
-    void uploadDDL_validFile_returnsSchemaId() {
-        given().contentType(MediaType.MULTIPART_FORM_DATA)
-                .multiPart("file", ddlTestFile())
-                .when()
-                .post(SCHEMA_PATH)
-                .then()
-                .statusCode(200)
-                .body(matchesPattern(UUID_PATTERN));
-    }
-
-    @Test
-    void uploadDDL_invalidFile_returns400() {
-        given().contentType(MediaType.MULTIPART_FORM_DATA)
-                .multiPart("file", invalidDdlTestFile())
-                .when()
-                .post(SCHEMA_PATH)
-                .then()
-                .statusCode(400)
-                .body("code", equalTo(3003));
-    }
-
-    @Test
-    void getSchema_afterUpload_returnsSchema() {
-        String schemaId = uploadDDL();
+    void getSchema_existingStandaloneSchema_returnsSchema() {
+        UUID schemaId = insertStandaloneSchema();
 
         given().when()
                 .get(SCHEMA_PATH + "/" + schemaId)
                 .then()
                 .statusCode(200)
-                .body("id", equalTo(schemaId))
+                .body("id", equalTo(schemaId.toString()))
                 .body("connectionId", nullValue())
+                .body("uploadedFileId", notNullValue())
                 .body("source", equalTo("UPLOADED_DDL"))
                 .body("schemaJson", notNullValue());
     }
@@ -82,7 +62,7 @@ class StandaloneSchemaResourceTest {
 
     @Test
     void querySchema_withValidSchema_returnsSqlOnly() {
-        String schemaId = uploadDDL();
+        UUID schemaId = insertStandaloneSchema();
         when(MockAiSqlService.instance().generateSql(any(), any()))
                 .thenReturn(new AiSqlResponse("SELECT * FROM users", "Returns all users", null));
 
@@ -115,27 +95,25 @@ class StandaloneSchemaResourceTest {
                 .body("code", equalTo(3001));
     }
 
-    private String uploadDDL() {
-        return given().contentType(MediaType.MULTIPART_FORM_DATA)
-                .multiPart("file", ddlTestFile())
-                .when()
-                .post(SCHEMA_PATH)
-                .then()
-                .statusCode(200)
-                .extract()
-                .asString()
-                .replace("\"", "");
-    }
-
-    private File ddlTestFile() {
-        URL resource = getClass().getClassLoader().getResource("uploadDDLTestFile.sql");
-        if (resource == null) throw new IllegalStateException("uploadDDLTestFile.sql not found");
-        return new File(resource.getFile());
-    }
-
-    private File invalidDdlTestFile() {
-        URL resource = getClass().getClassLoader().getResource("invalidDDLTestFile.sql");
-        if (resource == null) throw new IllegalStateException("invalidDDLTestFile.sql not found");
-        return new File(resource.getFile());
+    @Transactional
+    UUID insertStandaloneSchema() {
+        UUID uploadedFileId = UUID.randomUUID();
+        UUID schemaId = UUID.randomUUID();
+        entityManager
+                .createNativeQuery(
+                        "INSERT INTO uploaded_file (id, name, created_at)"
+                                + " VALUES (?1, ?2, NOW())")
+                .setParameter(1, uploadedFileId)
+                .setParameter(2, "test.sql")
+                .executeUpdate();
+        entityManager
+                .createNativeQuery(
+                        "INSERT INTO schema (id, uploaded_file_id, schema_json, source, created_at)"
+                                + " VALUES (?1, ?2, ?3, 'UPLOADED_DDL', NOW())")
+                .setParameter(1, schemaId)
+                .setParameter(2, uploadedFileId)
+                .setParameter(3, SAMPLE_SCHEMA_JSON)
+                .executeUpdate();
+        return schemaId;
     }
 }
