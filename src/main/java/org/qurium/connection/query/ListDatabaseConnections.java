@@ -27,10 +27,14 @@ public class ListDatabaseConnections {
 
     public List<DatabaseConnectionDTO> query() {
 
-        Map<UUID, Integer> tableCountByConnectionId = schemaRepository.findTableCountsByConnectionId();
+        Map<UUID, Integer> tableCountByConnectionId =
+                schemaRepository.findTableCountsByConnectionId();
 
         return connectionRepository.findAll().list().stream()
-                .map(c -> connectionMapper.toDTO(c, tableCountByConnectionId.get(c.getId()), isReachable(c)))
+                .map(
+                        c ->
+                                connectionMapper.toDTO(
+                                        c, tableCountByConnectionId.get(c.getId()), isReachable(c)))
                 .toList();
     }
 

@@ -24,9 +24,10 @@ public class DeleteUploadedFileHandler implements CommandHandler<DeleteUploadedF
     @Override
     @Transactional
     public Void handle(DeleteUploadedFileCommand command) {
-        UploadedFile uploadedFile = uploadedFileRepository
-                .findByIdOptional(command.id())
-                .orElseThrow(() -> new QuriumException(UPLOADED_FILE_NOT_FOUND));
+        UploadedFile uploadedFile =
+                uploadedFileRepository
+                        .findByIdOptional(command.id())
+                        .orElseThrow(() -> new QuriumException(UPLOADED_FILE_NOT_FOUND));
 
         schemaRepository.findByUploadedFileId(command.id()).ifPresent(Schema::delete);
         uploadedFile.delete();

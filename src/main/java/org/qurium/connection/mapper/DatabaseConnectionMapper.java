@@ -11,5 +11,6 @@ public interface DatabaseConnectionMapper {
 
     @Mapping(source = "tableCount", target = "tableCount")
     @Mapping(source = "isConnected", target = "isConnected")
-    DatabaseConnectionDTO toDTO(DatabaseConnection connection, Integer tableCount, boolean isConnected);
+    DatabaseConnectionDTO toDTO(
+            DatabaseConnection connection, Integer tableCount, boolean isConnected);
 }

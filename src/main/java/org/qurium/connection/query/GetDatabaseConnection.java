@@ -4,7 +4,6 @@ package org.qurium.connection.query;
 import static org.qurium.common.exception.QuriumExceptionCode.DATABASE_CONNECTION_NOT_FOUND;
 
 import jakarta.enterprise.context.ApplicationScoped;
-
 import java.sql.Connection;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -28,9 +27,10 @@ public class GetDatabaseConnection {
     private final DatabaseConnectionFactory connectionFactory;
 
     public DatabaseConnectionDTO query(UUID id) {
-        DatabaseConnection connection = repository
-                .findByIdOptional(id)
-                .orElseThrow(() -> new QuriumException(DATABASE_CONNECTION_NOT_FOUND));
+        DatabaseConnection connection =
+                repository
+                        .findByIdOptional(id)
+                        .orElseThrow(() -> new QuriumException(DATABASE_CONNECTION_NOT_FOUND));
 
         Integer tableCount = schemaRepository.findTableCountByConnectionId(id).orElse(null);
 

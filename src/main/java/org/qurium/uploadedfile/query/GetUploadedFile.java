@@ -22,9 +22,10 @@ public class GetUploadedFile {
     private final UploadedFileMapper uploadedFileMapper;
 
     public UploadedFileDTO query(UUID id) {
-        UploadedFile uploadedFile = uploadedFileRepository
-                .findByIdOptional(id)
-                .orElseThrow(() -> new QuriumException(UPLOADED_FILE_NOT_FOUND));
+        UploadedFile uploadedFile =
+                uploadedFileRepository
+                        .findByIdOptional(id)
+                        .orElseThrow(() -> new QuriumException(UPLOADED_FILE_NOT_FOUND));
 
         Integer tableCount = schemaRepository.findTableCountByUploadedFileId(id).orElse(null);
 

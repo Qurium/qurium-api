@@ -16,4 +16,4 @@ public record DatabaseConnectionDTO(
         Integer tableCount,
         boolean isConnected,
         Instant createdAt,
-        Instant updatedAt){}
+        Instant updatedAt) {}

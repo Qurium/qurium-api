@@ -40,16 +40,27 @@ public class ExecuteSchemaQueryHandler
             AiSqlResponse aiResponse =
                     aiSqlService.generateSql(schema.getSchemaJson(), command.question());
 
-            nlQueryRepository.store(null, command.question(),
-                    aiResponse.sql(), null, aiResponse.explanation(),
-                    NlQueryStatus.SUCCESS, null);
+            nlQueryRepository.store(
+                    null,
+                    command.question(),
+                    aiResponse.sql(),
+                    null,
+                    aiResponse.explanation(),
+                    NlQueryStatus.SUCCESS,
+                    null);
 
             return new ExecuteNlQueryResponseDTO(
                     aiResponse.sql(), aiResponse.explanation(), null, false);
 
         } catch (Exception e) {
-            nlQueryRepository.store(null, command.question(),
-                    null, null, null, NlQueryStatus.FAILED, e.getMessage());
+            nlQueryRepository.store(
+                    null,
+                    command.question(),
+                    null,
+                    null,
+                    null,
+                    NlQueryStatus.FAILED,
+                    e.getMessage());
 
             throw new QuriumException(NL_QUERY_AI_FAILED);
         }

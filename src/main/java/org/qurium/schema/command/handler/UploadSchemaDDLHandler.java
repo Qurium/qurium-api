@@ -3,6 +3,7 @@ package org.qurium.schema.command.handler;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.qurium.common.CommandHandler;
@@ -21,7 +22,26 @@ public class UploadSchemaDDLHandler implements CommandHandler<UploadSchemaDDLCom
     @Override
     @Transactional
     public UUID handle(UploadSchemaDDLCommand command) {
-        UploadedFile uploadedFile = uploadedFileRepository.store(command.fileName());
+
+        String fileName = command.fileName().trim().toLowerCase().replace(" ", "_");
+
+        Optional<UploadedFile> optionalUploadedFile =
+                uploadedFileRepository.findByFileName(fileName);
+
+        if (optionalUploadedFile.isPresent()) {
+
+            UUID id = optionalUploadedFile.get().getId();
+            schemaRepository
+                    .findByUploadedFileId(id)
+                    .ifPresent(
+                            s -> {
+                                s.setSchemaJson(command.schemaJson());
+                                s.persist();
+                            });
+            return optionalUploadedFile.get().getId();
+        }
+
+        UploadedFile uploadedFile = uploadedFileRepository.store(fileName);
         schemaRepository.store(uploadedFile, command.schemaJson());
         return uploadedFile.getId();
     }

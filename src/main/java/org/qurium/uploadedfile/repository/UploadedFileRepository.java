@@ -4,6 +4,7 @@ package org.qurium.uploadedfile.repository;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
+import java.util.Optional;
 import java.util.UUID;
 import org.qurium.uploadedfile.domain.UploadedFile;
 
@@ -16,5 +17,10 @@ public class UploadedFileRepository implements PanacheRepositoryBase<UploadedFil
         uploadedFile.setName(name);
         persist(uploadedFile);
         return uploadedFile;
+    }
+
+    public Optional<UploadedFile> findByFileName(String name) {
+
+        return find("name = ?1", name).firstResultOptional();
     }
 }

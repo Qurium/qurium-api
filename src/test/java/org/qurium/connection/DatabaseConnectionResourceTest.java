@@ -65,7 +65,8 @@ class DatabaseConnectionResourceTest {
         createConnection();
 
         when(connectionFactory.open(any()))
-                .thenThrow(new QuriumException(QuriumExceptionCode.DATABASE_CONNECTION_UNREACHABLE));
+                .thenThrow(
+                        new QuriumException(QuriumExceptionCode.DATABASE_CONNECTION_UNREACHABLE));
 
         given().queryParam("page", 0)
                 .queryParam("size", 10)
@@ -133,8 +134,11 @@ class DatabaseConnectionResourceTest {
     void getConnection_unreachable_returnsIsConnectedFalse() {
         String id = createConnection();
 
-        when(connectionFactory.open(org.mockito.ArgumentMatchers.<org.qurium.connection.domain.DatabaseConnection>any()))
-                .thenThrow(new QuriumException(QuriumExceptionCode.DATABASE_CONNECTION_UNREACHABLE));
+        when(connectionFactory.open(
+                        org.mockito.ArgumentMatchers
+                                .<org.qurium.connection.domain.DatabaseConnection>any()))
+                .thenThrow(
+                        new QuriumException(QuriumExceptionCode.DATABASE_CONNECTION_UNREACHABLE));
 
         given().when()
                 .get(BASE_PATH + "/" + id)
@@ -360,7 +364,9 @@ class DatabaseConnectionResourceTest {
     void testConnection_unreachable_returns200WithFailure() {
         String id = createConnection();
 
-        when(connectionFactory.open(org.mockito.ArgumentMatchers.<org.qurium.connection.domain.DatabaseConnection>any()))
+        when(connectionFactory.open(
+                        org.mockito.ArgumentMatchers
+                                .<org.qurium.connection.domain.DatabaseConnection>any()))
                 .thenThrow(
                         new QuriumException(QuriumExceptionCode.DATABASE_CONNECTION_UNREACHABLE));
 

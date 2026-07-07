@@ -47,8 +47,8 @@ public class UploadedFileResource {
             summary = "Upload schema DDL file",
             description =
                     "Accepts a .sql file containing CREATE TABLE statements, parses it into JSON,"
-                        + " and stores it as a standalone schema (no live connection required)."
-                        + " Returns the id of the created uploaded file.")
+                            + " and stores it as a standalone schema (no live connection required)."
+                            + " Returns the id of the created uploaded file.")
     @ApiResponses({
         @ApiResponse(
                 responseCode = "200",
@@ -116,8 +116,7 @@ public class UploadedFileResource {
     @Path("/{id}")
     @Operation(
             summary = "Delete an uploaded file",
-            description =
-                    "Soft-deletes an uploaded file and its associated schema.")
+            description = "Soft-deletes an uploaded file and its associated schema.")
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Uploaded file deleted successfully"),
         @ApiResponse(

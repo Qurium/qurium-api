@@ -126,11 +126,7 @@ class UploadedFileResourceTest {
 
         given().when().delete(BASE_PATH + "/" + id).then().statusCode(204);
 
-        given().when()
-                .get(BASE_PATH + "/" + id)
-                .then()
-                .statusCode(404)
-                .body("code", equalTo(5001));
+        given().when().get(BASE_PATH + "/" + id).then().statusCode(404).body("code", equalTo(5001));
     }
 
     @Test

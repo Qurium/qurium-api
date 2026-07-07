@@ -48,25 +48,26 @@ public class SchemaRepository implements PanacheRepositoryBase<Schema, UUID> {
 
     @SuppressWarnings("unchecked")
     public Map<UUID, Integer> findTableCountsByConnectionId() {
-        List<Object[]> rows = getEntityManager()
-                .createNativeQuery(
-                        "SELECT connection_id, json_array_length(schema_json::json)"
-                        + " FROM \"schema\""
-                        + " WHERE connection_id IS NOT NULL AND deleted_at IS NULL")
-                .getResultList();
+        List<Object[]> rows =
+                getEntityManager()
+                        .createNativeQuery(
+                                "SELECT connection_id, json_array_length(schema_json::json)"
+                                        + " FROM \"schema\""
+                                        + " WHERE connection_id IS NOT NULL AND deleted_at IS NULL")
+                        .getResultList();
 
         return rows.stream()
-                .collect(Collectors.toMap(
-                        row -> (UUID) row[0],
-                        row -> ((Number) row[1]).intValue()));
+                .collect(
+                        Collectors.toMap(
+                                row -> (UUID) row[0], row -> ((Number) row[1]).intValue()));
     }
 
     public Optional<Integer> findTableCountByConnectionId(UUID connectionId) {
         return getEntityManager()
                 .createNativeQuery(
                         "SELECT json_array_length(schema_json::json)"
-                        + " FROM \"schema\""
-                        + " WHERE connection_id = ?1 AND deleted_at IS NULL")
+                                + " FROM \"schema\""
+                                + " WHERE connection_id = ?1 AND deleted_at IS NULL")
                 .setParameter(1, connectionId)
                 .getResultStream()
                 .findFirst()
@@ -75,25 +76,26 @@ public class SchemaRepository implements PanacheRepositoryBase<Schema, UUID> {
 
     @SuppressWarnings("unchecked")
     public Map<UUID, Integer> findTableCountsByUploadedFileId() {
-        List<Object[]> rows = getEntityManager()
-                .createNativeQuery(
-                        "SELECT uploaded_file_id, json_array_length(schema_json::json)"
-                        + " FROM \"schema\""
-                        + " WHERE uploaded_file_id IS NOT NULL AND deleted_at IS NULL")
-                .getResultList();
+        List<Object[]> rows =
+                getEntityManager()
+                        .createNativeQuery(
+                                "SELECT uploaded_file_id, json_array_length(schema_json::json) FROM"
+                                        + " \"schema\" WHERE uploaded_file_id IS NOT NULL AND"
+                                        + " deleted_at IS NULL")
+                        .getResultList();
 
         return rows.stream()
-                .collect(Collectors.toMap(
-                        row -> (UUID) row[0],
-                        row -> ((Number) row[1]).intValue()));
+                .collect(
+                        Collectors.toMap(
+                                row -> (UUID) row[0], row -> ((Number) row[1]).intValue()));
     }
 
     public Optional<Integer> findTableCountByUploadedFileId(UUID uploadedFileId) {
         return getEntityManager()
                 .createNativeQuery(
                         "SELECT json_array_length(schema_json::json)"
-                        + " FROM \"schema\""
-                        + " WHERE uploaded_file_id = ?1 AND deleted_at IS NULL")
+                                + " FROM \"schema\""
+                                + " WHERE uploaded_file_id = ?1 AND deleted_at IS NULL")
                 .setParameter(1, uploadedFileId)
                 .getResultStream()
                 .findFirst()
