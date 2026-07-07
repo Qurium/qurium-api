@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.qurium.common.CommandHandler;
 import org.qurium.common.exception.QuriumException;
 import org.qurium.connection.DatabaseConnectionFactory;
-import org.qurium.connection.command.data.CreateDatabaseConnectionCommand;
 import org.qurium.connection.command.data.TestDatabaseConnectionCommand;
 import org.qurium.connection.domain.DatabaseConnection;
 import org.qurium.connection.dto.TestConnectionDTO;

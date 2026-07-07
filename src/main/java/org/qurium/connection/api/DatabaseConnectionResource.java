@@ -149,12 +149,14 @@ public class DatabaseConnectionResource {
     @Path("/test")
     @Operation(
             summary = "Test new connection credentials",
-            description = "Tests whether the provided connection details can reach the database."
-                    + " Returns true if reachable, false otherwise.")
+            description =
+                    "Tests whether the provided connection details can reach the database."
+                            + " Returns true if reachable, false otherwise.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Connectivity result returned")
     })
-    public TestNewConnectionDTO testNewConnection(@Valid TestNewDatabaseConnectionRequest request) {
+    public TestNewConnectionDTO testNonStoredConnection(
+            @Valid TestNewDatabaseConnectionRequest request) {
 
         return testNewDatabaseConnectionHandler.handle(
                 new TestNewDatabaseConnectionCommand(

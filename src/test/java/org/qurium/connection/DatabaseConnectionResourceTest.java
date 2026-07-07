@@ -411,13 +411,14 @@ class DatabaseConnectionResourceTest {
                 .post(BASE_PATH + "/test")
                 .then()
                 .statusCode(200)
-                .body(equalTo("true"));
+                .body("isConnected", equalTo(true));
     }
 
     @Test
     void testNewConnection_unreachable_returnsFalse() {
         when(connectionFactory.open(any(), any(), any(), any(), any(), any()))
-                .thenThrow(new QuriumException(QuriumExceptionCode.DATABASE_CONNECTION_UNREACHABLE));
+                .thenThrow(
+                        new QuriumException(QuriumExceptionCode.DATABASE_CONNECTION_UNREACHABLE));
 
         given().contentType(MediaType.APPLICATION_JSON)
                 .body(VALID_TEST_BODY)
@@ -425,7 +426,7 @@ class DatabaseConnectionResourceTest {
                 .post(BASE_PATH + "/test")
                 .then()
                 .statusCode(200)
-                .body(equalTo("false"));
+                .body("isConnected", equalTo(false));
     }
 
     @Test

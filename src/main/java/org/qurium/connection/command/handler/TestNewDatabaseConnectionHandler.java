@@ -18,13 +18,14 @@ public class TestNewDatabaseConnectionHandler
     @Override
     public TestNewConnectionDTO handle(TestNewDatabaseConnectionCommand command) {
 
-        try (var ignored = connectionFactory.open(
-                command.type(),
-                command.host(),
-                command.port(),
-                command.databaseName(),
-                command.username(),
-                command.password())) {
+        try (var ignored =
+                connectionFactory.open(
+                        command.type(),
+                        command.host(),
+                        command.port(),
+                        command.databaseName(),
+                        command.username(),
+                        command.password())) {
             return new TestNewConnectionDTO(true);
         } catch (Exception e) {
             return new TestNewConnectionDTO(false);
