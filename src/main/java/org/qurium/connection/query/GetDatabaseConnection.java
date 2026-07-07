@@ -32,7 +32,7 @@ public class GetDatabaseConnection {
                         .findByIdOptional(id)
                         .orElseThrow(() -> new QuriumException(DATABASE_CONNECTION_NOT_FOUND));
 
-        Integer tableCount = schemaRepository.findTableCountByConnectionId(id).orElse(null);
+        Integer tableCount = schemaRepository.findTableCountByConnectionId(id).orElse(0);
 
         return mapper.toDTO(connection, tableCount, isReachable(connection));
     }

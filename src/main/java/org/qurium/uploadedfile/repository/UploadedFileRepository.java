@@ -21,6 +21,6 @@ public class UploadedFileRepository implements PanacheRepositoryBase<UploadedFil
 
     public Optional<UploadedFile> findByFileName(String name) {
 
-        return find("name = ?1", name).firstResultOptional();
+        return find("lower(replace(trim(name), ' ', '_')) = ?1", name).firstResultOptional();
     }
 }

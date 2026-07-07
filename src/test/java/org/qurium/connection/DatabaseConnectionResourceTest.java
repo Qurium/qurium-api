@@ -57,7 +57,7 @@ class DatabaseConnectionResourceTest {
                 .then()
                 .statusCode(200)
                 .body("content[0].isConnected", equalTo(true))
-                .body("content[0].tableCount", nullValue());
+                .body("content[0].tableCount", equalTo(0));
     }
 
     @Test
@@ -127,7 +127,7 @@ class DatabaseConnectionResourceTest {
                 .body("port", equalTo(5432))
                 .body("databaseName", equalTo("mydb"))
                 .body("isConnected", equalTo(true))
-                .body("tableCount", nullValue());
+                .body("tableCount", equalTo(0));
     }
 
     @Test

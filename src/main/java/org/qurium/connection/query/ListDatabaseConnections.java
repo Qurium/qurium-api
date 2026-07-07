@@ -34,7 +34,9 @@ public class ListDatabaseConnections {
                 .map(
                         c ->
                                 connectionMapper.toDTO(
-                                        c, tableCountByConnectionId.get(c.getId()), isReachable(c)))
+                                        c,
+                                        tableCountByConnectionId.getOrDefault(c.getId(), 0),
+                                        isReachable(c)))
                 .toList();
     }
 

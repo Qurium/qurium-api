@@ -27,7 +27,7 @@ public class GetUploadedFile {
                         .findByIdOptional(id)
                         .orElseThrow(() -> new QuriumException(UPLOADED_FILE_NOT_FOUND));
 
-        Integer tableCount = schemaRepository.findTableCountByUploadedFileId(id).orElse(null);
+        Integer tableCount = schemaRepository.findTableCountByUploadedFileId(id).orElse(0);
 
         return uploadedFileMapper.toDTO(uploadedFile, tableCount);
     }

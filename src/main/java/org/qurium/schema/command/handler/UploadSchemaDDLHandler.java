@@ -41,7 +41,7 @@ public class UploadSchemaDDLHandler implements CommandHandler<UploadSchemaDDLCom
             return optionalUploadedFile.get().getId();
         }
 
-        UploadedFile uploadedFile = uploadedFileRepository.store(fileName);
+        UploadedFile uploadedFile = uploadedFileRepository.store(command.fileName());
         schemaRepository.store(uploadedFile, command.schemaJson());
         return uploadedFile.getId();
     }
