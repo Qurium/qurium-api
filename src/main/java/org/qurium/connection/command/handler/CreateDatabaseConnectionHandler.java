@@ -42,18 +42,6 @@ public class CreateDatabaseConnectionHandler
                             throw new QuriumException(DATABASE_CONNECTION_ALREADY_EXISTS);
                         });
 
-        try (Connection ignored = connectionFactory.open(
-                request.getType(),
-                request.getHost(),
-                request.getPort(),
-                request.getDatabaseName(),
-                request.getUsername(),
-                request.getPassword())) {
-
-        } catch (Exception e) {
-            throw new QuriumException(DATABASE_CONNECTION_UNREACHABLE);
-        }
-
         request.setPassword(encryptionService.encrypt(request.getPassword()));
         return connectionRepository.store(request);
     }
