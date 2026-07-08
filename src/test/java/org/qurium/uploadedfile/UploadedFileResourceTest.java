@@ -36,6 +36,7 @@ class UploadedFileResourceTest {
     void uploadFile_validFile_returnsUploadedFileId() {
         given().contentType(MediaType.MULTIPART_FORM_DATA)
                 .multiPart("file", ddlTestFile())
+                .multiPart("name", "My Schema")
                 .when()
                 .post(BASE_PATH)
                 .then()
@@ -47,11 +48,22 @@ class UploadedFileResourceTest {
     void uploadFile_invalidFile_returns400() {
         given().contentType(MediaType.MULTIPART_FORM_DATA)
                 .multiPart("file", invalidDdlTestFile())
+                .multiPart("name", "Bad Schema")
                 .when()
                 .post(BASE_PATH)
                 .then()
                 .statusCode(400)
                 .body("code", equalTo(3003));
+    }
+
+    @Test
+    void uploadFile_missingName_returns400() {
+        given().contentType(MediaType.MULTIPART_FORM_DATA)
+                .multiPart("file", ddlTestFile())
+                .when()
+                .post(BASE_PATH)
+                .then()
+                .statusCode(400);
     }
 
     @Test
@@ -77,7 +89,8 @@ class UploadedFileResourceTest {
                 .get(BASE_PATH)
                 .then()
                 .statusCode(200)
-                .body("content[0].name", equalTo("uploadDDLTestFile.sql"))
+                .body("content[0].name", equalTo("My Schema"))
+                .body("content[0].fileName", equalTo("uploadDDLTestFile.sql"))
                 .body("content[0].tableCount", greaterThan(0));
     }
 
@@ -100,7 +113,8 @@ class UploadedFileResourceTest {
                 .then()
                 .statusCode(200)
                 .body("id", equalTo(id))
-                .body("name", equalTo("uploadDDLTestFile.sql"))
+                .body("name", equalTo("My Schema"))
+                .body("fileName", equalTo("uploadDDLTestFile.sql"))
                 .body("tableCount", greaterThan(0));
     }
 
@@ -141,6 +155,7 @@ class UploadedFileResourceTest {
     private String uploadDDL() {
         return given().contentType(MediaType.MULTIPART_FORM_DATA)
                 .multiPart("file", ddlTestFile())
+                .multiPart("name", "My Schema")
                 .when()
                 .post(BASE_PATH)
                 .then()

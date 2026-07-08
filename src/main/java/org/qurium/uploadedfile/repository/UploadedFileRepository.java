@@ -12,15 +12,16 @@ import org.qurium.uploadedfile.domain.UploadedFile;
 public class UploadedFileRepository implements PanacheRepositoryBase<UploadedFile, UUID> {
 
     @Transactional(Transactional.TxType.MANDATORY)
-    public UploadedFile store(String name) {
+    public UploadedFile store(String fileName, String name) {
         UploadedFile uploadedFile = new UploadedFile();
         uploadedFile.setName(name);
+        uploadedFile.setFileName(fileName);
         persist(uploadedFile);
         return uploadedFile;
     }
 
-    public Optional<UploadedFile> findByFileName(String name) {
+    public Optional<UploadedFile> findByFileNameAndName(String fileName) {
 
-        return find("lower(replace(trim(name), ' ', '_')) = ?1", name).firstResultOptional();
+        return find("lower(replace(trim(fileName), ' ', '_')) = ?1", fileName).firstResultOptional();
     }
 }

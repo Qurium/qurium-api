@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.ws.rs.*;
@@ -28,6 +29,7 @@ import org.qurium.schema.service.DDLParserService;
 import org.qurium.uploadedfile.command.data.DeleteUploadedFileCommand;
 import org.qurium.uploadedfile.command.handler.DeleteUploadedFileHandler;
 import org.qurium.uploadedfile.dto.UploadedFileDTO;
+import org.qurium.uploadedfile.dto.request.UploadFileRequest;
 import org.qurium.uploadedfile.query.GetUploadedFile;
 import org.qurium.uploadedfile.query.ListUploadedFiles;
 
@@ -59,11 +61,12 @@ public class UploadedFileResource {
                 description = "Failed to parse DDL file",
                 content = @Content(schema = @Schema(implementation = QuriumErrorResponse.class)))
     })
-    public UUID uploadFile(@RestForm("file") FileUpload file) throws IOException {
-        String ddl = readString(file.uploadedFile(), StandardCharsets.UTF_8);
+    public UUID uploadFile(@Valid UploadFileRequest request) throws IOException {
+
+        String ddl = readString(request.file().uploadedFile(), StandardCharsets.UTF_8);
         String schemaJson = ddlParserService.parse(ddl);
         return uploadSchemaDDLHandler.handle(
-                new UploadSchemaDDLCommand(file.fileName(), schemaJson));
+                new UploadSchemaDDLCommand(request.name() ,request.file().fileName(), schemaJson));
     }
 
     @GET
