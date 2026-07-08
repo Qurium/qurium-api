@@ -56,10 +56,14 @@ public class DatabaseConnectionFactory {
     public String buildUrl(
             DatabaseConnectionType type, String host, Long port, String databaseName) {
 
+        String timeout = "connectTimeout=5000&socketTimeout=5000";
+
         return switch (type) {
-            case POSTGRES -> "jdbc:postgresql://%s:%d/%s".formatted(host, port, databaseName);
-            case MYSQL -> "jdbc:mysql://%s:%d/%s".formatted(host, port, databaseName);
-            case ORACLE -> "jdbc:oracle:thin:@%s:%d:%s".formatted(host, port, databaseName);
+            case POSTGRES ->
+                    "jdbc:postgresql://%s:%d/%s?%s".formatted(host, port, databaseName, timeout);
+            case MYSQL -> "jdbc:mysql://%s:%d/%s?%s".formatted(host, port, databaseName, timeout);
+            case ORACLE ->
+                    "jdbc:oracle:thin:@%s:%d:%s?%s".formatted(host, port, databaseName, timeout);
         };
     }
 }
