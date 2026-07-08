@@ -24,7 +24,10 @@ public class ListUploadedFiles {
                 schemaRepository.findTableCountsByUploadedFileId();
 
         return uploadedFileRepository.findAll().list().stream()
-                .map(uf -> uploadedFileMapper.toDTO(uf, tableCountByUploadedFileId.get(uf.getId())))
+                .map(
+                        uf ->
+                                uploadedFileMapper.toDTO(
+                                        uf, tableCountByUploadedFileId.getOrDefault(uf.getId(), 0)))
                 .toList();
     }
 }

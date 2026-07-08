@@ -401,6 +401,82 @@ class DatabaseConnectionResourceTest {
                 .body("code", equalTo(2001));
     }
 
+    // POST /api/connections/test
+
+    @Test
+    void testNewConnection_reachable_returnsTrue() {
+        given().contentType(MediaType.APPLICATION_JSON)
+                .body(VALID_TEST_BODY)
+                .when()
+                .post(BASE_PATH + "/test")
+                .then()
+                .statusCode(200)
+                .body("isConnected", equalTo(true));
+    }
+
+    @Test
+    void testNewConnection_unreachable_returnsFalse() {
+        when(connectionFactory.open(any(), any(), any(), any(), any(), any()))
+                .thenThrow(
+                        new QuriumException(QuriumExceptionCode.DATABASE_CONNECTION_UNREACHABLE));
+
+        given().contentType(MediaType.APPLICATION_JSON)
+                .body(VALID_TEST_BODY)
+                .when()
+                .post(BASE_PATH + "/test")
+                .then()
+                .statusCode(200)
+                .body("isConnected", equalTo(false));
+    }
+
+    @Test
+    void testNewConnection_missingType_returns400() {
+        given().contentType(MediaType.APPLICATION_JSON)
+                .body(
+                        """
+                        {
+                            "host": "192.168.1.100",
+                            "port": 5432,
+                            "databaseName": "mydb"
+                        }
+                        """)
+                .when()
+                .post(BASE_PATH + "/test")
+                .then()
+                .statusCode(400);
+    }
+
+    @Test
+    void testNewConnection_invalidCredentials_returns400() {
+        given().contentType(MediaType.APPLICATION_JSON)
+                .body(
+                        """
+                        {
+                            "type": "POSTGRES",
+                            "host": "192.168.1.100",
+                            "port": 5432,
+                            "databaseName": "mydb",
+                            "username": "admin"
+                        }
+                        """)
+                .when()
+                .post(BASE_PATH + "/test")
+                .then()
+                .statusCode(400);
+    }
+
+    private static final String VALID_TEST_BODY =
+            """
+            {
+                "type": "POSTGRES",
+                "host": "192.168.1.100",
+                "port": 5432,
+                "databaseName": "mydb",
+                "username": "admin",
+                "password": "secret"
+            }
+            """;
+
     private static final String VALID_CONNECTION_BODY =
             """
             {
