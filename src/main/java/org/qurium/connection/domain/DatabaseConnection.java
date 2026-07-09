@@ -3,6 +3,7 @@ package org.qurium.connection.domain;
 
 import jakarta.persistence.*;
 import jakarta.persistence.EnumType;
+import java.time.Instant;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -36,4 +37,7 @@ public class DatabaseConnection extends BaseEntity {
 
     @Column(name = "encrypted_password")
     private String encryptedPassword;
+
+    @Column(name = "connected_at")
+    private Instant connectedAt;
 }

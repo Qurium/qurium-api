@@ -15,5 +15,6 @@ public record DatabaseConnectionDTO(
         String username,
         Integer tableCount,
         boolean isConnected,
+        Instant connectedAt,
         Instant createdAt,
         Instant updatedAt) {}

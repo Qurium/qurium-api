@@ -10,7 +10,6 @@ import org.qurium.connection.dto.DatabaseConnectionDTO;
 public interface DatabaseConnectionMapper {
 
     @Mapping(source = "tableCount", target = "tableCount")
-    @Mapping(source = "isConnected", target = "isConnected")
-    DatabaseConnectionDTO toDTO(
-            DatabaseConnection connection, Integer tableCount, boolean isConnected);
+    @Mapping(target = "isConnected", expression = "java(connection.getConnectedAt() != null)")
+    DatabaseConnectionDTO toDTO(DatabaseConnection connection, Integer tableCount);
 }

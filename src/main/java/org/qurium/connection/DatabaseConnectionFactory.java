@@ -53,7 +53,7 @@ public class DatabaseConnectionFactory {
         }
     }
 
-    public String buildUrl(
+    private String buildUrl(
             DatabaseConnectionType type, String host, Long port, String databaseName) {
 
         String timeout = "connectTimeout=5000&socketTimeout=5000";
