@@ -26,7 +26,7 @@ public class UploadSchemaDDLHandler implements CommandHandler<UploadSchemaDDLCom
         String fileName = command.fileName().trim().toLowerCase().replace(" ", "_");
 
         Optional<UploadedFile> optionalUploadedFile =
-                uploadedFileRepository.findByFileName(fileName);
+                uploadedFileRepository.findByFileNameAndName(fileName);
 
         if (optionalUploadedFile.isPresent()) {
 
@@ -41,7 +41,7 @@ public class UploadSchemaDDLHandler implements CommandHandler<UploadSchemaDDLCom
             return optionalUploadedFile.get().getId();
         }
 
-        UploadedFile uploadedFile = uploadedFileRepository.store(command.fileName());
+        UploadedFile uploadedFile = uploadedFileRepository.store(command.fileName(), command.name());
         schemaRepository.store(uploadedFile, command.schemaJson());
         return uploadedFile.getId();
     }

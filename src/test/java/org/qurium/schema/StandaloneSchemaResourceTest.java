@@ -101,10 +101,11 @@ class StandaloneSchemaResourceTest {
         UUID schemaId = UUID.randomUUID();
         entityManager
                 .createNativeQuery(
-                        "INSERT INTO uploaded_file (id, name, created_at)"
-                                + " VALUES (?1, ?2, NOW())")
+                        "INSERT INTO uploaded_file (id, name, file_name, created_at)"
+                                + " VALUES (?1, ?2, ?3, NOW())")
                 .setParameter(1, uploadedFileId)
                 .setParameter(2, "test.sql")
+                .setParameter(3, "test.sql")
                 .executeUpdate();
         entityManager
                 .createNativeQuery(

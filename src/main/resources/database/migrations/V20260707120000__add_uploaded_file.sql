@@ -5,11 +5,12 @@
 -- ============================================================
 CREATE TABLE IF NOT EXISTS uploaded_file
 (
-    id         UUID        NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-    name       VARCHAR(255) NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ,
-    deleted_at TIMESTAMPTZ
+    id              UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+    file_name       VARCHAR(255) NOT NULL,
+    name            VARCHAR(255) NOT NULL,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ,
+    deleted_at      TIMESTAMPTZ
 );
 
 ALTER TABLE schema
