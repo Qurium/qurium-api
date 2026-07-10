@@ -2,6 +2,7 @@
 package org.qurium.schema;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -36,7 +37,7 @@ class SchemaResourceTest {
     @Transactional
     void cleanUp() {
         entityManager.createNativeQuery("DELETE FROM nl_query").executeUpdate();
-        entityManager.createNativeQuery("DELETE FROM schema").executeUpdate();
+        entityManager.createNativeQuery("DELETE FROM \"schema\"").executeUpdate();
         entityManager.createNativeQuery("DELETE FROM uploaded_file").executeUpdate();
         entityManager.createNativeQuery("DELETE FROM database_connection").executeUpdate();
     }
@@ -63,6 +64,19 @@ class SchemaResourceTest {
     }
 
     @Test
+    void introspect_deletedConnection_returns404() {
+        String connectionId = createConnection();
+
+        given().when().delete(CONNECTIONS_PATH + "/" + connectionId).then().statusCode(204);
+
+        given().when()
+                .post(schemaPath(connectionId) + "/introspect")
+                .then()
+                .statusCode(404)
+                .body("code", equalTo(2001));
+    }
+
+    @Test
     void introspect_connectionUnreachable_returns400() {
         String connectionId = createConnection();
 
@@ -74,16 +88,26 @@ class SchemaResourceTest {
                 .post(schemaPath(connectionId) + "/introspect")
                 .then()
                 .statusCode(400)
-                .body("code", equalTo(3002));
+                .body("code", equalTo(2002));
     }
 
     @Test
+    @Transactional
     void introspect_replacesExistingSchema() throws Exception {
         String connectionId = createConnection();
         mockSuccessfulIntrospection();
 
         given().when().post(schemaPath(connectionId) + "/introspect").then().statusCode(200);
         given().when().post(schemaPath(connectionId) + "/introspect").then().statusCode(200);
+
+        Number count =
+                (Number)
+                        entityManager
+                                .createNativeQuery(
+                                        "SELECT COUNT(*) FROM \"schema\""
+                                                + " WHERE deleted_at IS NULL")
+                                .getSingleResult();
+        assertThat(count.intValue(), equalTo(1));
 
         given().when()
                 .get(schemaPath(connectionId))
@@ -127,7 +151,7 @@ class SchemaResourceTest {
                 .get(schemaPath(NONEXISTENT_ID))
                 .then()
                 .statusCode(404)
-                .body("code", equalTo(3001));
+                .body("code", equalTo(2001));
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────

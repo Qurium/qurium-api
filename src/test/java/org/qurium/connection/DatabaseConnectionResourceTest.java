@@ -124,6 +124,7 @@ class DatabaseConnectionResourceTest {
                 .body("port", equalTo(5432))
                 .body("databaseName", equalTo("mydb"))
                 .body("isConnected", equalTo(true))
+                .body("connectedAt", notNullValue())
                 .body("tableCount", equalTo(0));
     }
 
