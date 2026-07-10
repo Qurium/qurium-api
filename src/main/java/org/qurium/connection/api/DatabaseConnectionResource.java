@@ -18,10 +18,12 @@ import org.qurium.common.PaginatedResponse;
 import org.qurium.common.exception.QuriumErrorResponse;
 import org.qurium.connection.command.data.CreateDatabaseConnectionCommand;
 import org.qurium.connection.command.data.DeleteDatabaseConnectionCommand;
+import org.qurium.connection.command.data.ReconnectDatabaseConnectionCommand;
 import org.qurium.connection.command.data.TestDatabaseConnectionCommand;
 import org.qurium.connection.command.data.TestNewDatabaseConnectionCommand;
 import org.qurium.connection.command.handler.CreateDatabaseConnectionHandler;
 import org.qurium.connection.command.handler.DeleteDatabaseConnectionHandler;
+import org.qurium.connection.command.handler.ReconnectDatabaseConnectionHandler;
 import org.qurium.connection.command.handler.TestDatabaseConnectionHandler;
 import org.qurium.connection.command.handler.TestNewDatabaseConnectionHandler;
 import org.qurium.connection.dto.DatabaseConnectionDTO;
@@ -42,6 +44,7 @@ public class DatabaseConnectionResource {
     private final DeleteDatabaseConnectionHandler deleteDatabaseConnectionHandler;
     private final TestDatabaseConnectionHandler testDatabaseConnectionHandler;
     private final TestNewDatabaseConnectionHandler testNewDatabaseConnectionHandler;
+    private final ReconnectDatabaseConnectionHandler reconnectDatabaseConnectionHandler;
 
     @GET
     @Operation(
@@ -143,6 +146,26 @@ public class DatabaseConnectionResource {
             @Parameter(description = "connection id") @PathParam("id") UUID id) {
 
         return testDatabaseConnectionHandler.handle(new TestDatabaseConnectionCommand(id));
+    }
+
+    @PATCH
+    @Path("/{id}/reconnect")
+    @Operation(
+            summary = "Reconnect a database connection",
+            description =
+                    "Attempts to re-establish the connection. On success, persists connectedAt."
+                            + " On failure, leaves the existing connectedAt unchanged.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Reconnect attempted successfully"),
+        @ApiResponse(
+                responseCode = "404",
+                description = "Database connection not found",
+                content = @Content(schema = @Schema(implementation = QuriumErrorResponse.class)))
+    })
+    public void reconnectConnection(
+            @Parameter(description = "connection id") @PathParam("id") UUID id) {
+
+        reconnectDatabaseConnectionHandler.handle(new ReconnectDatabaseConnectionCommand(id));
     }
 
     @POST

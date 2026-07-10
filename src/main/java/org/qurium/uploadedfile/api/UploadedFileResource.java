@@ -19,8 +19,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.jboss.resteasy.reactive.RestForm;
-import org.jboss.resteasy.reactive.multipart.FileUpload;
 import org.qurium.common.PaginatedResponse;
 import org.qurium.common.exception.QuriumErrorResponse;
 import org.qurium.schema.command.data.UploadSchemaDDLCommand;
@@ -66,7 +64,7 @@ public class UploadedFileResource {
         String ddl = readString(request.file().uploadedFile(), StandardCharsets.UTF_8);
         String schemaJson = ddlParserService.parse(ddl);
         return uploadSchemaDDLHandler.handle(
-                new UploadSchemaDDLCommand(request.name() ,request.file().fileName(), schemaJson));
+                new UploadSchemaDDLCommand(request.name(), request.file().fileName(), schemaJson));
     }
 
     @GET

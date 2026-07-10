@@ -11,6 +11,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.MediaType;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.qurium.common.exception.QuriumException;
@@ -62,11 +63,7 @@ class DatabaseConnectionResourceTest {
 
     @Test
     void listConnections_unreachableConnection_returnsIsConnectedFalse() {
-        createConnection();
-
-        when(connectionFactory.open(any()))
-                .thenThrow(
-                        new QuriumException(QuriumExceptionCode.DATABASE_CONNECTION_UNREACHABLE));
+        insertConnectionWithoutConnectedAt();
 
         given().queryParam("page", 0)
                 .queryParam("size", 10)
@@ -127,18 +124,13 @@ class DatabaseConnectionResourceTest {
                 .body("port", equalTo(5432))
                 .body("databaseName", equalTo("mydb"))
                 .body("isConnected", equalTo(true))
+                .body("connectedAt", notNullValue())
                 .body("tableCount", equalTo(0));
     }
 
     @Test
     void getConnection_unreachable_returnsIsConnectedFalse() {
-        String id = createConnection();
-
-        when(connectionFactory.open(
-                        org.mockito.ArgumentMatchers
-                                .<org.qurium.connection.domain.DatabaseConnection>any()))
-                .thenThrow(
-                        new QuriumException(QuriumExceptionCode.DATABASE_CONNECTION_UNREACHABLE));
+        String id = insertConnectionWithoutConnectedAt();
 
         given().when()
                 .get(BASE_PATH + "/" + id)
@@ -490,6 +482,51 @@ class DatabaseConnectionResourceTest {
             }
             """;
 
+    // POST /api/connections/{id}/reconnect
+
+    @Test
+    void reconnectConnection_reachable_setsConnectedAt() {
+        String id = insertConnectionWithoutConnectedAt();
+
+        given().when().patch(BASE_PATH + "/" + id + "/reconnect").then().statusCode(204);
+
+        given().when()
+                .get(BASE_PATH + "/" + id)
+                .then()
+                .statusCode(200)
+                .body("isConnected", equalTo(true))
+                .body("connectedAt", notNullValue());
+    }
+
+    @Test
+    void reconnectConnection_unreachable_doesNotClearConnectedAt() {
+        String id = createConnection();
+
+        when(connectionFactory.open(
+                        org.mockito.ArgumentMatchers
+                                .<org.qurium.connection.domain.DatabaseConnection>any()))
+                .thenThrow(
+                        new QuriumException(QuriumExceptionCode.DATABASE_CONNECTION_UNREACHABLE));
+
+        given().when().patch(BASE_PATH + "/" + id + "/reconnect").then().statusCode(204);
+
+        given().when()
+                .get(BASE_PATH + "/" + id)
+                .then()
+                .statusCode(200)
+                .body("isConnected", equalTo(true))
+                .body("connectedAt", notNullValue());
+    }
+
+    @Test
+    void reconnectConnection_nonexistentId_returns404() {
+        given().when()
+                .patch(BASE_PATH + "/" + NONEXISTENT_ID + "/reconnect")
+                .then()
+                .statusCode(404)
+                .body("code", equalTo(2001));
+    }
+
     private String createConnection() {
         return given().contentType(MediaType.APPLICATION_JSON)
                 .body(VALID_CONNECTION_BODY)
@@ -500,5 +537,19 @@ class DatabaseConnectionResourceTest {
                 .extract()
                 .asString()
                 .replace("\"", "");
+    }
+
+    @Transactional
+    String insertConnectionWithoutConnectedAt() {
+        UUID id = UUID.randomUUID();
+        entityManager
+                .createNativeQuery(
+                        "INSERT INTO database_connection (id, name, type, host, port,"
+                                + " database_name, created_at) VALUES (?1, ?2, 'POSTGRES',"
+                                + " '192.168.1.100', 5432, 'mydb', NOW())")
+                .setParameter(1, id)
+                .setParameter(2, "Test Connection")
+                .executeUpdate();
+        return id.toString();
     }
 }

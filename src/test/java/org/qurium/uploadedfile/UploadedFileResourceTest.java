@@ -2,6 +2,7 @@
 package org.qurium.uploadedfile;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 import io.quarkus.test.junit.QuarkusTest;
@@ -150,6 +151,34 @@ class UploadedFileResourceTest {
                 .then()
                 .statusCode(404)
                 .body("code", equalTo(5001));
+    }
+
+    @Test
+    @Transactional
+    void uploadFile_sameFileName_returnsExistingIdAndUpdatesSchema() {
+        String firstId = uploadDDL();
+        String secondId = uploadDDL();
+
+        assertThat(secondId, equalTo(firstId));
+
+        Number count =
+                (Number)
+                        entityManager
+                                .createNativeQuery(
+                                        "SELECT COUNT(*) FROM \"schema\" WHERE deleted_at IS NULL")
+                                .getSingleResult();
+        assertThat(count.intValue(), equalTo(1));
+    }
+
+    @Test
+    void uploadFile_sameFileNameAfterDelete_createsNewFile() {
+        String firstId = uploadDDL();
+
+        given().when().delete(BASE_PATH + "/" + firstId).then().statusCode(204);
+
+        String secondId = uploadDDL();
+
+        assertThat(secondId, not(equalTo(firstId)));
     }
 
     private String uploadDDL() {

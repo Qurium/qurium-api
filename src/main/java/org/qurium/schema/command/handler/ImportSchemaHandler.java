@@ -1,8 +1,7 @@
 /* Qurium - 2026 */
 package org.qurium.schema.command.handler;
 
-import static org.qurium.common.exception.QuriumExceptionCode.DATABASE_CONNECTION_NOT_FOUND;
-import static org.qurium.common.exception.QuriumExceptionCode.SCHEMA_IMPORT_FAILED;
+import static org.qurium.common.exception.QuriumExceptionCode.*;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
@@ -15,6 +14,7 @@ import org.qurium.connection.DatabaseConnectionFactory;
 import org.qurium.connection.domain.DatabaseConnection;
 import org.qurium.connection.repository.DatabaseConnectionRepository;
 import org.qurium.schema.command.data.ImportSchemaCommand;
+import org.qurium.schema.domain.Schema;
 import org.qurium.schema.domain.SchemaSource;
 import org.qurium.schema.repository.SchemaRepository;
 import org.qurium.schema.service.SchemaIntrospectionService;
@@ -40,12 +40,26 @@ public class ImportSchemaHandler implements CommandHandler<ImportSchemaCommand, 
         try (Connection jdbc = connectionFactory.open(connection)) {
             String schemaJson = introspectionService.introspect(jdbc);
 
-            schemaRepository
-                    .findByConnectionId(connection.getId())
-                    .ifPresent(schemaRepository::delete);
+            Schema schema =
+                    schemaRepository
+                            .findByConnectionId(connection.getId())
+                            .orElseGet(
+                                    () -> {
+                                        Schema s = new Schema();
+                                        s.setConnection(connection);
+                                        return s;
+                                    });
 
-            return schemaRepository.store(connection, schemaJson, SchemaSource.CONNECTED);
+            schema.setSchemaJson(schemaJson);
+            schema.setSource(SchemaSource.CONNECTED);
 
+            if (schema.getId() == null) {
+                schemaRepository.persist(schema);
+            }
+            return schema.getId();
+
+        } catch (QuriumException e) {
+            throw e;
         } catch (Exception e) {
             throw new QuriumException(SCHEMA_IMPORT_FAILED);
         }

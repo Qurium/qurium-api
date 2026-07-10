@@ -4,6 +4,7 @@ package org.qurium.connection.repository;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class DatabaseConnectionRepository
         newConnection.setType(request.getType());
         newConnection.setUsername(request.getUsername());
         newConnection.setEncryptedPassword(request.getPassword());
+        newConnection.setConnectedAt(Instant.now());
         persist(newConnection);
 
         return newConnection.getId();
