@@ -7,6 +7,8 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.qurium.common.CommandHandler;
+import org.qurium.common.exception.QuriumException;
+import org.qurium.common.exception.QuriumExceptionCode;
 import org.qurium.schema.command.data.UploadSchemaDDLCommand;
 import org.qurium.schema.repository.SchemaRepository;
 import org.qurium.uploadedfile.domain.UploadedFile;
@@ -26,7 +28,7 @@ public class UploadSchemaDDLHandler implements CommandHandler<UploadSchemaDDLCom
         String fileName = command.fileName().trim().toLowerCase().replace(" ", "_");
 
         Optional<UploadedFile> optionalUploadedFile =
-                uploadedFileRepository.findByFileNameAndName(fileName);
+                uploadedFileRepository.findByFileName(fileName);
 
         if (optionalUploadedFile.isPresent()) {
 
@@ -40,6 +42,14 @@ public class UploadSchemaDDLHandler implements CommandHandler<UploadSchemaDDLCom
                             });
             return optionalUploadedFile.get().getId();
         }
+
+        uploadedFileRepository
+                .findByName(command.name())
+                .ifPresent(
+                        _ -> {
+                            throw new QuriumException(
+                                    QuriumExceptionCode.UPLOADED_FILE_ALREADY_EXISTS);
+                        });
 
         UploadedFile uploadedFile =
                 uploadedFileRepository.store(command.fileName(), command.name());
