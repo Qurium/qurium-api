@@ -154,6 +154,48 @@ class UploadedFileResourceTest {
     }
 
     @Test
+    void uploadFile_duplicateName_returns409() {
+        insertFileWithoutSchema("My Schema", "other_schema.sql");
+
+        given().contentType(MediaType.MULTIPART_FORM_DATA)
+                .multiPart("file", ddlTestFile())
+                .multiPart("name", "My Schema")
+                .when()
+                .post(BASE_PATH)
+                .then()
+                .statusCode(409)
+                .body("code", equalTo(5002));
+    }
+
+    @Test
+    void reuploadFile_nameConflictsWithOtherFile_returns409() {
+        insertFileWithoutSchema("Taken Name", "other_schema.sql");
+        String id = uploadDDL();
+
+        given().contentType(MediaType.MULTIPART_FORM_DATA)
+                .multiPart("file", ddlTestFile())
+                .multiPart("name", "Taken Name")
+                .when()
+                .patch(BASE_PATH + "/" + id)
+                .then()
+                .statusCode(409)
+                .body("code", equalTo(5002));
+    }
+
+    @Test
+    void reuploadFile_sameNameAsSelf_doesNotConflict() {
+        String id = uploadDDL();
+
+        given().contentType(MediaType.MULTIPART_FORM_DATA)
+                .multiPart("file", ddlTestFile())
+                .multiPart("name", "My Schema")
+                .when()
+                .patch(BASE_PATH + "/" + id)
+                .then()
+                .statusCode(200);
+    }
+
+    @Test
     @Transactional
     void uploadFile_sameFileName_returnsExistingIdAndUpdatesSchema() {
         String firstId = uploadDDL();
@@ -181,6 +223,125 @@ class UploadedFileResourceTest {
         assertThat(secondId, not(equalTo(firstId)));
     }
 
+    // PATCH /api/uploaded-files/{id}
+
+    @Test
+    void reuploadFile_validFile_returnsId() {
+        String id = uploadDDL();
+
+        given().contentType(MediaType.MULTIPART_FORM_DATA)
+                .multiPart("file", ddlTestFile())
+                .multiPart("name", "My Schema")
+                .when()
+                .patch(BASE_PATH + "/" + id)
+                .then()
+                .statusCode(200)
+                .body(equalTo("\"" + id + "\""));
+    }
+
+    @Test
+    void reuploadFile_invalidFile_returns400() {
+        String id = uploadDDL();
+
+        given().contentType(MediaType.MULTIPART_FORM_DATA)
+                .multiPart("file", invalidDdlTestFile())
+                .multiPart("name", "My Schema")
+                .when()
+                .patch(BASE_PATH + "/" + id)
+                .then()
+                .statusCode(400)
+                .body("code", equalTo(3003));
+    }
+
+    @Test
+    void reuploadFile_nonexistentId_returns404() {
+        given().contentType(MediaType.MULTIPART_FORM_DATA)
+                .multiPart("file", ddlTestFile())
+                .multiPart("name", "My Schema")
+                .when()
+                .patch(BASE_PATH + "/" + NONEXISTENT_ID)
+                .then()
+                .statusCode(404)
+                .body("code", equalTo(5001));
+    }
+
+    @Test
+    void reuploadFile_deletedFile_returns404() {
+        String id = uploadDDL();
+
+        given().when().delete(BASE_PATH + "/" + id).then().statusCode(204);
+
+        given().contentType(MediaType.MULTIPART_FORM_DATA)
+                .multiPart("file", ddlTestFile())
+                .multiPart("name", "My Schema")
+                .when()
+                .patch(BASE_PATH + "/" + id)
+                .then()
+                .statusCode(404)
+                .body("code", equalTo(5001));
+    }
+
+    @Test
+    @Transactional
+    void reuploadFile_updatesSchemaAndKeepsOneRecord() {
+        String id = uploadDDL();
+
+        given().contentType(MediaType.MULTIPART_FORM_DATA)
+                .multiPart("file", ddlTestFile())
+                .multiPart("name", "My Schema")
+                .when()
+                .patch(BASE_PATH + "/" + id)
+                .then()
+                .statusCode(200);
+
+        Number count =
+                (Number)
+                        entityManager
+                                .createNativeQuery(
+                                        "SELECT COUNT(*) FROM \"schema\" WHERE deleted_at IS NULL")
+                                .getSingleResult();
+        assertThat(count.intValue(), equalTo(1));
+    }
+
+    @Test
+    void reuploadFile_withNewName_updatesName() {
+        String id = uploadDDL();
+
+        given().contentType(MediaType.MULTIPART_FORM_DATA)
+                .multiPart("file", ddlTestFile())
+                .multiPart("name", "Updated Name")
+                .when()
+                .patch(BASE_PATH + "/" + id)
+                .then()
+                .statusCode(200);
+
+        given().when()
+                .get(BASE_PATH + "/" + id)
+                .then()
+                .statusCode(200)
+                .body("name", equalTo("Updated Name"))
+                .body("fileName", equalTo("uploadDDLTestFile.sql"));
+    }
+
+    @Test
+    void reuploadFile_withoutName_keepsPreviousName() {
+        String id = uploadDDL();
+
+        given().contentType(MediaType.MULTIPART_FORM_DATA)
+                .multiPart("file", ddlTestFile())
+                .multiPart("name", "My Schema")
+                .when()
+                .patch(BASE_PATH + "/" + id)
+                .then()
+                .statusCode(200);
+
+        given().when()
+                .get(BASE_PATH + "/" + id)
+                .then()
+                .statusCode(200)
+                .body("name", equalTo("My Schema"));
+    }
+
     private String uploadDDL() {
         return given().contentType(MediaType.MULTIPART_FORM_DATA)
                 .multiPart("file", ddlTestFile())
@@ -204,5 +365,16 @@ class UploadedFileResourceTest {
         URL resource = getClass().getClassLoader().getResource("invalidDDLTestFile.sql");
         if (resource == null) throw new IllegalStateException("invalidDDLTestFile.sql not found");
         return new File(resource.getFile());
+    }
+
+    @Transactional
+    void insertFileWithoutSchema(String name, String fileName) {
+        entityManager
+                .createNativeQuery(
+                        "INSERT INTO uploaded_file (id, name, file_name, created_at)"
+                                + " VALUES (gen_random_uuid(), ?1, ?2, NOW())")
+                .setParameter(1, name)
+                .setParameter(2, fileName)
+                .executeUpdate();
     }
 }

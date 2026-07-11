@@ -19,13 +19,16 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.jboss.resteasy.reactive.multipart.FileUpload;
 import org.qurium.common.PaginatedResponse;
 import org.qurium.common.exception.QuriumErrorResponse;
 import org.qurium.schema.command.data.UploadSchemaDDLCommand;
 import org.qurium.schema.command.handler.UploadSchemaDDLHandler;
 import org.qurium.schema.service.DDLParserService;
 import org.qurium.uploadedfile.command.data.DeleteUploadedFileCommand;
+import org.qurium.uploadedfile.command.data.ReuploadFileCommand;
 import org.qurium.uploadedfile.command.handler.DeleteUploadedFileHandler;
+import org.qurium.uploadedfile.command.handler.ReuploadFileHandler;
 import org.qurium.uploadedfile.dto.UploadedFileDTO;
 import org.qurium.uploadedfile.dto.request.UploadFileRequest;
 import org.qurium.uploadedfile.query.GetUploadedFile;
@@ -39,6 +42,7 @@ public class UploadedFileResource {
     private final ListUploadedFiles listUploadedFiles;
     private final GetUploadedFile getUploadedFile;
     private final DeleteUploadedFileHandler deleteUploadedFileHandler;
+    private final ReuploadFileHandler reuploadFileHandler;
     private final DDLParserService ddlParserService;
 
     @POST
@@ -61,10 +65,36 @@ public class UploadedFileResource {
     })
     public UUID uploadFile(@Valid UploadFileRequest request) throws IOException {
 
-        String ddl = readString(request.file().uploadedFile(), StandardCharsets.UTF_8);
-        String schemaJson = ddlParserService.parse(ddl);
+        String schemaJson = ddlParser(request.file());
         return uploadSchemaDDLHandler.handle(
                 new UploadSchemaDDLCommand(request.name(), request.file().fileName(), schemaJson));
+    }
+
+    @PATCH
+    @Path("{id}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Operation(
+            summary = "Reupload schema DDL file for an existing schema",
+            description =
+                    "Accepts a .sql file containing CREATE TABLE statements, parses it into JSON,"
+                            + " and stores it as a standalone schema (no live connection required)."
+                            + " Returns the id of the created uploaded file.")
+    @ApiResponses({
+        @ApiResponse(
+                responseCode = "200",
+                description = "File uploaded and schema parsed successfully",
+                content = @Content(schema = @Schema(implementation = UUID.class))),
+        @ApiResponse(
+                responseCode = "400",
+                description = "Failed to parse DDL file",
+                content = @Content(schema = @Schema(implementation = QuriumErrorResponse.class)))
+    })
+    public UUID uploadFileById(@Valid UploadFileRequest request, @PathParam("id") UUID id)
+            throws IOException {
+
+        String schemaJson = ddlParser(request.file());
+        return reuploadFileHandler.handle(
+                new ReuploadFileCommand(id, request.name(), request.file().fileName(), schemaJson));
     }
 
     @GET
@@ -130,5 +160,11 @@ public class UploadedFileResource {
 
         deleteUploadedFileHandler.handle(new DeleteUploadedFileCommand(id));
         return Response.noContent().build();
+    }
+
+    private String ddlParser(FileUpload file) throws IOException {
+
+        String ddl = readString(file.uploadedFile(), StandardCharsets.UTF_8);
+        return ddlParserService.parse(ddl);
     }
 }

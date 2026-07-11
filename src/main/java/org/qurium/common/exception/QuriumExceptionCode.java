@@ -38,7 +38,11 @@ public enum QuriumExceptionCode {
             4001, "AI service failed to generate SQL", Response.Status.INTERNAL_SERVER_ERROR),
 
     // Uploaded File
-    UPLOADED_FILE_NOT_FOUND(5001, "Uploaded file not found", Response.Status.NOT_FOUND);
+    UPLOADED_FILE_NOT_FOUND(5001, "Uploaded file not found", Response.Status.NOT_FOUND),
+    UPLOADED_FILE_ALREADY_EXISTS(
+            5002,
+            "An uploaded file with this name or filename already exists",
+            Response.Status.CONFLICT);
 
     private final int errorCode;
     private final String errorMessage;
