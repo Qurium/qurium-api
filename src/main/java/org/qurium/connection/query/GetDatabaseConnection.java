@@ -7,6 +7,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.qurium.common.exception.QuriumException;
+import org.qurium.connection.domain.DatabaseConnection;
 import org.qurium.connection.dto.DatabaseConnectionDTO;
 import org.qurium.connection.mapper.DatabaseConnectionMapper;
 import org.qurium.connection.repository.DatabaseConnectionRepository;
@@ -21,7 +22,7 @@ public class GetDatabaseConnection {
     private final SchemaRepository schemaRepository;
 
     public DatabaseConnectionDTO query(UUID id) {
-        var connection =
+        DatabaseConnection connection =
                 repository
                         .findByIdOptional(id)
                         .orElseThrow(() -> new QuriumException(DATABASE_CONNECTION_NOT_FOUND));

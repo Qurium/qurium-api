@@ -527,6 +527,210 @@ class DatabaseConnectionResourceTest {
                 .body("code", equalTo(2001));
     }
 
+    // PUT /api/connections/{id}
+
+    private static final String VALID_UPDATE_BODY =
+            """
+            {
+                "name": "Updated Connection",
+                "host": "192.168.1.100",
+                "port": 5432,
+                "databaseName": "mydb",
+                "username": "admin",
+                "password": "secret"
+            }
+            """;
+
+    @Test
+    void updateConnection_validRequest_returnsDTO() {
+        String id = createConnection();
+
+        given().contentType(MediaType.APPLICATION_JSON)
+                .body(VALID_UPDATE_BODY)
+                .when()
+                .put(BASE_PATH + "/" + id)
+                .then()
+                .statusCode(200)
+                .body("id", equalTo(id))
+                .body("name", equalTo("Updated Connection"))
+                .body("isConnected", equalTo(true))
+                .body("connectedAt", notNullValue())
+                .body("tableCount", equalTo(0));
+    }
+
+    @Test
+    void updateConnection_updatesFields() {
+        String id = createConnection();
+
+        given().contentType(MediaType.APPLICATION_JSON)
+                .body(VALID_UPDATE_BODY)
+                .when()
+                .put(BASE_PATH + "/" + id)
+                .then()
+                .statusCode(200)
+                .body("name", equalTo("Updated Connection"))
+                .body("isConnected", equalTo(true))
+                .body("connectedAt", notNullValue());
+    }
+
+    @Test
+    void updateConnection_nonexistentId_returns404() {
+        given().contentType(MediaType.APPLICATION_JSON)
+                .body(VALID_UPDATE_BODY)
+                .when()
+                .put(BASE_PATH + "/" + NONEXISTENT_ID)
+                .then()
+                .statusCode(404)
+                .body("code", equalTo(2001));
+    }
+
+    @Test
+    void updateConnection_deletedId_returns404() {
+        String id = createConnection();
+
+        given().when().delete(BASE_PATH + "/" + id).then().statusCode(204);
+
+        given().contentType(MediaType.APPLICATION_JSON)
+                .body(VALID_UPDATE_BODY)
+                .when()
+                .put(BASE_PATH + "/" + id)
+                .then()
+                .statusCode(404)
+                .body("code", equalTo(2001));
+    }
+
+    @Test
+    void updateConnection_duplicateTarget_returns409() {
+        createConnection();
+
+        String otherId =
+                given().contentType(MediaType.APPLICATION_JSON)
+                        .body(
+                                """
+                                {
+                                    "name": "Second Connection",
+                                    "type": "POSTGRES",
+                                    "host": "192.168.1.200",
+                                    "port": 5432,
+                                    "databaseName": "otherdb",
+                                    "username": "admin",
+                                    "password": "secret"
+                                }
+                                """)
+                        .when()
+                        .post(BASE_PATH)
+                        .then()
+                        .statusCode(200)
+                        .extract()
+                        .asString()
+                        .replace("\"", "");
+
+        given().contentType(MediaType.APPLICATION_JSON)
+                .body(
+                        """
+                        {
+                            "name": "Second Connection",
+                            "host": "192.168.1.100",
+                            "port": 5432,
+                            "databaseName": "mydb"
+                        }
+                        """)
+                .when()
+                .put(BASE_PATH + "/" + otherId)
+                .then()
+                .statusCode(409)
+                .body("code", equalTo(2003));
+    }
+
+    @Test
+    void updateConnection_sameTargetAsSelf_doesNotConflict() {
+        String id = createConnection();
+
+        given().contentType(MediaType.APPLICATION_JSON)
+                .body(VALID_UPDATE_BODY)
+                .when()
+                .put(BASE_PATH + "/" + id)
+                .then()
+                .statusCode(200);
+    }
+
+    @Test
+    void updateConnection_withoutCredentials_clearsExistingCredentials() {
+        String id = createConnection();
+
+        given().contentType(MediaType.APPLICATION_JSON)
+                .body(
+                        """
+                        {
+                            "name": "Updated Connection",
+                            "host": "192.168.1.100",
+                            "port": 5432,
+                            "databaseName": "mydb"
+                        }
+                        """)
+                .when()
+                .put(BASE_PATH + "/" + id)
+                .then()
+                .statusCode(200)
+                .body("username", nullValue());
+    }
+
+    @Test
+    void updateConnection_unreachableHost_returns400() {
+        String id = createConnection();
+
+        when(connectionFactory.open(any(), any(), any(), any(), any(), any()))
+                .thenThrow(
+                        new QuriumException(QuriumExceptionCode.DATABASE_CONNECTION_UNREACHABLE));
+
+        given().contentType(MediaType.APPLICATION_JSON)
+                .body(VALID_UPDATE_BODY)
+                .when()
+                .put(BASE_PATH + "/" + id)
+                .then()
+                .statusCode(400)
+                .body("code", equalTo(2002));
+    }
+
+    @Test
+    void updateConnection_missingName_returns400() {
+        String id = createConnection();
+
+        given().contentType(MediaType.APPLICATION_JSON)
+                .body(
+                        """
+                        {
+                            "host": "192.168.1.100",
+                            "port": 5432,
+                            "databaseName": "mydb"
+                        }
+                        """)
+                .when()
+                .put(BASE_PATH + "/" + id)
+                .then()
+                .statusCode(400);
+    }
+
+    @Test
+    void updateConnection_invalidHost_returns400() {
+        String id = createConnection();
+
+        given().contentType(MediaType.APPLICATION_JSON)
+                .body(
+                        """
+                        {
+                            "name": "Updated Connection",
+                            "host": "invalid-hostname.example.com",
+                            "port": 5432,
+                            "databaseName": "mydb"
+                        }
+                        """)
+                .when()
+                .put(BASE_PATH + "/" + id)
+                .then()
+                .statusCode(400);
+    }
+
     private String createConnection() {
         return given().contentType(MediaType.APPLICATION_JSON)
                 .body(VALID_CONNECTION_BODY)
