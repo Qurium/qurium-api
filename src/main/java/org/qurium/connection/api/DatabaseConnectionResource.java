@@ -16,21 +16,14 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.qurium.common.PaginatedResponse;
 import org.qurium.common.exception.QuriumErrorResponse;
-import org.qurium.connection.command.data.CreateDatabaseConnectionCommand;
-import org.qurium.connection.command.data.DeleteDatabaseConnectionCommand;
-import org.qurium.connection.command.data.ReconnectDatabaseConnectionCommand;
-import org.qurium.connection.command.data.TestDatabaseConnectionCommand;
-import org.qurium.connection.command.data.TestNewDatabaseConnectionCommand;
-import org.qurium.connection.command.handler.CreateDatabaseConnectionHandler;
-import org.qurium.connection.command.handler.DeleteDatabaseConnectionHandler;
-import org.qurium.connection.command.handler.ReconnectDatabaseConnectionHandler;
-import org.qurium.connection.command.handler.TestDatabaseConnectionHandler;
-import org.qurium.connection.command.handler.TestNewDatabaseConnectionHandler;
+import org.qurium.connection.command.data.*;
+import org.qurium.connection.command.handler.*;
 import org.qurium.connection.dto.DatabaseConnectionDTO;
 import org.qurium.connection.dto.TestConnectionDTO;
 import org.qurium.connection.dto.TestNewConnectionDTO;
 import org.qurium.connection.dto.requests.CreateDatabaseConnectionRequest;
 import org.qurium.connection.dto.requests.TestNewDatabaseConnectionRequest;
+import org.qurium.connection.dto.requests.UpdateDatabaseConnectionRequest;
 import org.qurium.connection.query.GetDatabaseConnection;
 import org.qurium.connection.query.ListDatabaseConnections;
 
@@ -45,6 +38,7 @@ public class DatabaseConnectionResource {
     private final TestDatabaseConnectionHandler testDatabaseConnectionHandler;
     private final TestNewDatabaseConnectionHandler testNewDatabaseConnectionHandler;
     private final ReconnectDatabaseConnectionHandler reconnectDatabaseConnectionHandler;
+    private final UpdateDatabaseConnectionHandler updateDatabaseConnectionHandler;
 
     @GET
     @Operation(
@@ -166,6 +160,40 @@ public class DatabaseConnectionResource {
             @Parameter(description = "connection id") @PathParam("id") UUID id) {
 
         reconnectDatabaseConnectionHandler.handle(new ReconnectDatabaseConnectionCommand(id));
+    }
+
+    @PUT
+    @Path("/{id}")
+    @Operation(
+            summary = "Update database connection",
+            description =
+                    "Updates connection details, re-tests connectivity, and refreshes connectedAt."
+                            + " Type cannot be changed. Credentials are optional but must be sent"
+                            + " together.")
+    @ApiResponses({
+        @ApiResponse(
+                responseCode = "200",
+                description = "Connection updated successfully",
+                content = @Content(schema = @Schema(implementation = DatabaseConnectionDTO.class))),
+        @ApiResponse(
+                responseCode = "400",
+                description = "Could not reach the database with the provided details",
+                content = @Content(schema = @Schema(implementation = QuriumErrorResponse.class))),
+        @ApiResponse(
+                responseCode = "404",
+                description = "Database connection not found",
+                content = @Content(schema = @Schema(implementation = QuriumErrorResponse.class))),
+        @ApiResponse(
+                responseCode = "409",
+                description = "Another connection already targets the same database",
+                content = @Content(schema = @Schema(implementation = QuriumErrorResponse.class)))
+    })
+    public DatabaseConnectionDTO updateConnection(
+            @Parameter(description = "connection id") @PathParam("id") UUID id,
+            @Valid UpdateDatabaseConnectionRequest request) {
+
+        return updateDatabaseConnectionHandler.handle(
+                new UpdateDatabaseConnectionCommand(id, request));
     }
 
     @POST
