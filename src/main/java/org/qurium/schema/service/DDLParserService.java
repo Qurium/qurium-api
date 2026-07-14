@@ -38,6 +38,16 @@ public class DDLParserService {
                     "CREATE\\s+(?:UNIQUE\\s+)?INDEX\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?\"?(\\w+)\"?\\s+ON\\s+(?:\\w+\\.)?\"?(\\w+)\"?\\s*\\((.+?)\\);",
                     Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
+    private static final Pattern INLINE_INDEX_PATTERN =
+            Pattern.compile(
+                    "(UNIQUE\\s+)?(?:KEY|INDEX)\\s+(\\w+)\\s*\\(([^)]+)\\)",
+                    Pattern.CASE_INSENSITIVE);
+
+    private static final Pattern INLINE_FK_PATTERN =
+            Pattern.compile(
+                    "CONSTRAINT\\s+(\\w+)\\s+FOREIGN\\s+KEY\\s*\\(([^)]+)\\)\\s+REFERENCES\\s+(?:\\w+\\.)?\"?(\\w+)\"?\\s*\\(([^)]+)\\)",
+                    Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+
     private static final Pattern INSERT_INTO_PATTERN =
             Pattern.compile(
                     "INSERT\\s+INTO\\s+(?:\\w+\\.)?\"?(\\w+)\"?\\s*\\((.+?)\\)\\s*VALUES\\s*(.+?);",
@@ -79,11 +89,16 @@ public class DDLParserService {
             String tableName = matcher.group(1).toLowerCase();
             String columnsBlock = matcher.group(2);
 
+            List<Map<String, Object>> constraints = new ArrayList<>();
+            List<Map<String, Object>> indexes = new ArrayList<>();
+            parseInlineConstraints(columnsBlock, constraints);
+            parseInlineIndexes(columnsBlock, indexes);
+
             Map<String, Object> table = new LinkedHashMap<>();
             table.put("table", tableName);
             table.put("columns", parseColumns(columnsBlock));
-            table.put("constraints", new ArrayList<Map<String, Object>>());
-            table.put("indexes", new ArrayList<Map<String, Object>>());
+            table.put("constraints", constraints);
+            table.put("indexes", indexes);
             tableMap.put(tableName, table);
         }
     }
@@ -265,11 +280,37 @@ public class DDLParserService {
         return columns;
     }
 
+    private void parseInlineConstraints(String columnsBlock, List<Map<String, Object>> constraints) {
+        Matcher matcher = INLINE_FK_PATTERN.matcher(columnsBlock);
+        while (matcher.find()) {
+            Map<String, Object> constraint = new LinkedHashMap<>();
+            constraint.put("name", matcher.group(1));
+            constraint.put("type", "FOREIGN_KEY");
+            constraint.put("columns", matcher.group(2).trim());
+            constraint.put("referencesTable", matcher.group(3));
+            constraint.put("referencesColumns", matcher.group(4).trim());
+            constraints.add(constraint);
+        }
+    }
+
+    private void parseInlineIndexes(String columnsBlock, List<Map<String, Object>> indexes) {
+        Matcher matcher = INLINE_INDEX_PATTERN.matcher(columnsBlock);
+        while (matcher.find()) {
+            Map<String, Object> index = new LinkedHashMap<>();
+            index.put("name", matcher.group(2));
+            index.put("columns", matcher.group(3).trim());
+            index.put("unique", matcher.group(1) != null);
+            indexes.add(index);
+        }
+    }
+
     private boolean isConstraint(String line) {
         String upper = line.toUpperCase().trim();
         return upper.startsWith("PRIMARY KEY")
                 || upper.startsWith("FOREIGN KEY")
                 || upper.startsWith("UNIQUE")
+                || upper.startsWith("INDEX")
+                || upper.startsWith("KEY")
                 || upper.startsWith("CHECK")
                 || upper.startsWith("CONSTRAINT");
     }

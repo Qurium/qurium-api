@@ -248,6 +248,131 @@ class DDLParserServiceTest {
     }
 
     @Test
+    void parse_inlineIndex_addsIndexAndNotColumn() throws Exception {
+        String ddl =
+                """
+                CREATE TABLE users (
+                    id INT NOT NULL,
+                    email VARCHAR(255),
+                    INDEX idx_email (email)
+                );
+                """;
+
+        List<Map<String, Object>> result = parse(ddl);
+
+        List<Map<String, String>> columns = columns(result, "users");
+        assertThat(columns).hasSize(2);
+        assertThat(columns).extracting(c -> c.get("name")).doesNotContain("INDEX");
+
+        List<Map<String, Object>> indexes = indexes(result, "users");
+        assertThat(indexes).hasSize(1);
+        assertThat(indexes.get(0))
+                .containsEntry("name", "idx_email")
+                .containsEntry("columns", "email")
+                .containsEntry("unique", false);
+    }
+
+    @Test
+    void parse_inlineUniqueKey_addsUniqueIndexAndNotColumn() throws Exception {
+        String ddl =
+                """
+                CREATE TABLE users (
+                    id INT NOT NULL,
+                    username VARCHAR(255),
+                    UNIQUE KEY uq_username (username)
+                );
+                """;
+
+        List<Map<String, Object>> result = parse(ddl);
+
+        List<Map<String, String>> columns = columns(result, "users");
+        assertThat(columns).hasSize(2);
+
+        List<Map<String, Object>> indexes = indexes(result, "users");
+        assertThat(indexes).hasSize(1);
+        assertThat(indexes.get(0))
+                .containsEntry("name", "uq_username")
+                .containsEntry("columns", "username")
+                .containsEntry("unique", true);
+    }
+
+    @Test
+    void parse_inlineForeignKey_addsConstraintAndNotColumn() throws Exception {
+        String ddl =
+                """
+                CREATE TABLE orders (
+                    id INT NOT NULL,
+                    user_id INT NOT NULL,
+                    CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
+                );
+                """;
+
+        List<Map<String, Object>> result = parse(ddl);
+
+        List<Map<String, String>> columns = columns(result, "orders");
+        assertThat(columns).hasSize(2);
+
+        List<Map<String, Object>> constraints = constraints(result, "orders");
+        assertThat(constraints).hasSize(1);
+        assertThat(constraints.get(0))
+                .containsEntry("name", "fk_orders_user")
+                .containsEntry("type", "FOREIGN_KEY")
+                .containsEntry("columns", "user_id")
+                .containsEntry("referencesTable", "users")
+                .containsEntry("referencesColumns", "id");
+    }
+
+    @Test
+    void parse_mysqlStyle_fullSchema() throws Exception {
+        String ddl =
+                """
+                CREATE TABLE user_details (
+                    user_id INT(11) NOT NULL AUTO_INCREMENT,
+                    username VARCHAR(255) DEFAULT NULL,
+                    PRIMARY KEY (user_id),
+                    UNIQUE KEY uq_username (username)
+                );
+                CREATE TABLE roles (
+                    role_id INT NOT NULL AUTO_INCREMENT,
+                    role_name VARCHAR(50) NOT NULL,
+                    PRIMARY KEY (role_id)
+                );
+                CREATE TABLE user_addresses (
+                    address_id INT NOT NULL AUTO_INCREMENT,
+                    user_id INT(11) NOT NULL,
+                    role_id INT NOT NULL,
+                    city VARCHAR(100) NOT NULL,
+                    PRIMARY KEY (address_id),
+                    INDEX idx_user_id (user_id),
+                    INDEX idx_role_id (role_id),
+                    CONSTRAINT fk_address_user FOREIGN KEY (user_id) REFERENCES user_details(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
+                    CONSTRAINT fk_address_role FOREIGN KEY (role_id) REFERENCES roles(role_id) ON DELETE RESTRICT ON UPDATE CASCADE
+                );
+                """;
+
+        List<Map<String, Object>> result = parse(ddl);
+
+        assertThat(result).hasSize(3);
+
+        // user_details: UNIQUE KEY becomes an index, not a column
+        assertThat(columns(result, "user_details")).hasSize(2);
+        assertThat(indexes(result, "user_details")).hasSize(1);
+        assertThat(indexes(result, "user_details").get(0)).containsEntry("unique", true);
+
+        // user_addresses: INDEX entries become indexes, not columns; CONSTRAINT entries become constraints
+        List<Map<String, String>> addrColumns = columns(result, "user_addresses");
+        assertThat(addrColumns).hasSize(4);
+        assertThat(addrColumns).extracting(c -> c.get("name")).doesNotContain("INDEX", "CONSTRAINT");
+
+        assertThat(indexes(result, "user_addresses")).hasSize(2);
+        assertThat(constraints(result, "user_addresses")).hasSize(2);
+        assertThat(constraints(result, "user_addresses").get(0))
+                .containsEntry("referencesTable", "user_details");
+        assertThat(constraints(result, "user_addresses").get(1))
+                .containsEntry("referencesTable", "roles");
+    }
+
+    @Test
     void parse_noCreateTable_throwsException() {
         String ddl = "INSERT INTO users (id) VALUES (1);";
 

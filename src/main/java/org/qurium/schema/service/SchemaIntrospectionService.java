@@ -33,6 +33,8 @@ public class SchemaIntrospectionService {
                     Map<String, Object> table = new LinkedHashMap<>();
                     table.put("table", tableName);
                     table.put("columns", getColumns(metaData, tableName));
+                    table.put("constraints", getConstraints(metaData, tableName));
+                    table.put("indexes", getIndexes(metaData, tableName));
                     tables.add(table);
                 }
             }
@@ -59,5 +61,63 @@ public class SchemaIntrospectionService {
         }
 
         return columns;
+    }
+
+    private List<Map<String, Object>> getConstraints(DatabaseMetaData metaData, String tableName)
+            throws SQLException {
+        Map<String, Map<String, Object>> byName = new LinkedHashMap<>();
+
+        try (ResultSet rs = metaData.getImportedKeys(null, null, tableName)) {
+            while (rs.next()) {
+                String fkName = rs.getString("FK_NAME");
+                if (fkName == null) continue;
+
+                String fkCol = rs.getString("FKCOLUMN_NAME");
+                String pkCol = rs.getString("PKCOLUMN_NAME");
+
+                if (!byName.containsKey(fkName)) {
+                    Map<String, Object> c = new LinkedHashMap<>();
+                    c.put("name", fkName);
+                    c.put("type", "FOREIGN_KEY");
+                    c.put("columns", fkCol);
+                    c.put("referencesTable", rs.getString("PKTABLE_NAME"));
+                    c.put("referencesColumns", pkCol);
+                    byName.put(fkName, c);
+                } else {
+                    Map<String, Object> c = byName.get(fkName);
+                    c.put("columns", c.get("columns") + ", " + fkCol);
+                    c.put("referencesColumns", c.get("referencesColumns") + ", " + pkCol);
+                }
+            }
+        }
+
+        return new ArrayList<>(byName.values());
+    }
+
+    private List<Map<String, Object>> getIndexes(DatabaseMetaData metaData, String tableName)
+            throws SQLException {
+        Map<String, Map<String, Object>> byName = new LinkedHashMap<>();
+
+        try (ResultSet rs = metaData.getIndexInfo(null, null, tableName, false, false)) {
+            while (rs.next()) {
+                String indexName = rs.getString("INDEX_NAME");
+                if (indexName == null) continue; // skip table statistics row
+
+                String colName = rs.getString("COLUMN_NAME");
+
+                if (!byName.containsKey(indexName)) {
+                    Map<String, Object> index = new LinkedHashMap<>();
+                    index.put("name", indexName);
+                    index.put("columns", colName);
+                    index.put("unique", !rs.getBoolean("NON_UNIQUE"));
+                    byName.put(indexName, index);
+                } else {
+                    Map<String, Object> index = byName.get(indexName);
+                    index.put("columns", index.get("columns") + ", " + colName);
+                }
+            }
+        }
+
+        return new ArrayList<>(byName.values());
     }
 }
