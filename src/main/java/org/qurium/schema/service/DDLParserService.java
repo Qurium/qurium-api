@@ -280,7 +280,8 @@ public class DDLParserService {
         return columns;
     }
 
-    private void parseInlineConstraints(String columnsBlock, List<Map<String, Object>> constraints) {
+    private void parseInlineConstraints(
+            String columnsBlock, List<Map<String, Object>> constraints) {
         Matcher matcher = INLINE_FK_PATTERN.matcher(columnsBlock);
         while (matcher.find()) {
             Map<String, Object> constraint = new LinkedHashMap<>();
