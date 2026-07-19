@@ -359,10 +359,13 @@ class DDLParserServiceTest {
         assertThat(indexes(result, "user_details")).hasSize(1);
         assertThat(indexes(result, "user_details").get(0)).containsEntry("unique", true);
 
-        // user_addresses: INDEX entries become indexes, not columns; CONSTRAINT entries become constraints
+        // user_addresses: INDEX entries become indexes, not columns; CONSTRAINT entries become
+        // constraints
         List<Map<String, String>> addrColumns = columns(result, "user_addresses");
         assertThat(addrColumns).hasSize(4);
-        assertThat(addrColumns).extracting(c -> c.get("name")).doesNotContain("INDEX", "CONSTRAINT");
+        assertThat(addrColumns)
+                .extracting(c -> c.get("name"))
+                .doesNotContain("INDEX", "CONSTRAINT");
 
         assertThat(indexes(result, "user_addresses")).hasSize(2);
         assertThat(constraints(result, "user_addresses")).hasSize(2);
