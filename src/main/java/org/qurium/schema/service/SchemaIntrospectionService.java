@@ -33,6 +33,7 @@ public class SchemaIntrospectionService {
                     Map<String, Object> table = new LinkedHashMap<>();
                     table.put("table", tableName);
                     table.put("columns", getColumns(metaData, tableName));
+                    table.put("primaryKeys", getPrimaryKeys(metaData, tableName));
                     table.put("constraints", getConstraints(metaData, tableName));
                     table.put("indexes", getIndexes(metaData, tableName));
                     tables.add(table);
@@ -61,6 +62,17 @@ public class SchemaIntrospectionService {
         }
 
         return columns;
+    }
+
+    private List<String> getPrimaryKeys(DatabaseMetaData metaData, String tableName)
+            throws SQLException {
+        List<String> pks = new ArrayList<>();
+        try (ResultSet rs = metaData.getPrimaryKeys(null, null, tableName)) {
+            while (rs.next()) {
+                pks.add(rs.getString("COLUMN_NAME"));
+            }
+        }
+        return pks;
     }
 
     private List<Map<String, Object>> getConstraints(DatabaseMetaData metaData, String tableName)
