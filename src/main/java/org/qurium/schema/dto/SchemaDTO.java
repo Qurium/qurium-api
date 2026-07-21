@@ -8,10 +8,9 @@ import org.qurium.schema.domain.SchemaSource;
 
 public record SchemaDTO(
         UUID id,
-        UUID connectionId,
-        String connectionName,
+        UUID ownerId,
+        String ownerName,
         String dialect,
-        UUID uploadedFileId,
         JsonNode schemaJson,
         SchemaSource source,
         Instant createdAt) {}

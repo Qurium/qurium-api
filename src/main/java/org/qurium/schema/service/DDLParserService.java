@@ -48,6 +48,16 @@ public class DDLParserService {
                     "CONSTRAINT\\s+(\\w+)\\s+FOREIGN\\s+KEY\\s*\\(([^)]+)\\)\\s+REFERENCES\\s+(?:\\w+\\.)?\"?(\\w+)\"?\\s*\\(([^)]+)\\)",
                     Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
+    private static final Pattern INLINE_PK_PATTERN =
+            Pattern.compile(
+                    "(?:CONSTRAINT\\s+\\w+\\s+)?PRIMARY\\s+KEY\\s*\\(([^)]+)\\)",
+                    Pattern.CASE_INSENSITIVE);
+
+    private static final Pattern ALTER_ADD_PK_PATTERN =
+            Pattern.compile(
+                    "ALTER\\s+TABLE\\s+(?:\\w+\\.)?\"?(\\w+)\"?\\s+ADD\\s+(?:CONSTRAINT\\s+\\w+\\s+)?PRIMARY\\s+KEY\\s*\\(([^)]+)\\)",
+                    Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+
     private static final Pattern INSERT_INTO_PATTERN =
             Pattern.compile(
                     "INSERT\\s+INTO\\s+(?:\\w+\\.)?\"?(\\w+)\"?\\s*\\((.+?)\\)\\s*VALUES\\s*(.+?);",
@@ -68,6 +78,7 @@ public class DDLParserService {
         parseCreateTables(ddl, tableMap);
         parseAlterAddColumns(ddl, tableMap);
         parseAlterAddConstraints(ddl, tableMap);
+        parseAlterAddPrimaryKeys(ddl, tableMap);
         parseCreateIndexes(ddl, tableMap);
         parseInsertInto(ddl, tableMap);
 
@@ -97,6 +108,7 @@ public class DDLParserService {
             Map<String, Object> table = new LinkedHashMap<>();
             table.put("table", tableName);
             table.put("columns", parseColumns(columnsBlock));
+            table.put("primaryKeys", parsePrimaryKeysFromBlock(columnsBlock));
             table.put("constraints", constraints);
             table.put("indexes", indexes);
             tableMap.put(tableName, table);
@@ -255,6 +267,49 @@ public class DDLParserService {
         values.add(current.toString());
 
         return values.toArray(new String[0]);
+    }
+
+    private List<String> parsePrimaryKeysFromBlock(String columnsBlock) {
+        List<String> pks = new ArrayList<>();
+
+        Matcher pkMatcher = INLINE_PK_PATTERN.matcher(columnsBlock);
+        if (pkMatcher.find()) {
+            for (String col : pkMatcher.group(1).split(",")) {
+                pks.add(col.trim().replace("\"", "").toLowerCase());
+            }
+            return pks;
+        }
+
+        for (String part : columnsBlock.split(",")) {
+            String trimmed = part.trim();
+            if (!isConstraint(trimmed) && trimmed.toUpperCase().contains("PRIMARY KEY")) {
+                Matcher colMatcher = COLUMN_PATTERN.matcher(trimmed);
+                if (colMatcher.find()) {
+                    pks.add(colMatcher.group(1).toLowerCase());
+                }
+            }
+        }
+        return pks;
+    }
+
+    private void parseAlterAddPrimaryKeys(String ddl, Map<String, Map<String, Object>> tableMap) {
+        Matcher matcher = ALTER_ADD_PK_PATTERN.matcher(ddl);
+        while (matcher.find()) {
+            String tableName = matcher.group(1).toLowerCase();
+            String pkColumns = matcher.group(2).trim();
+
+            Map<String, Object> table = tableMap.get(tableName);
+            if (table == null) continue;
+
+            @SuppressWarnings("unchecked")
+            List<String> pks = (List<String>) table.get("primaryKeys");
+            for (String col : pkColumns.split(",")) {
+                String colName = col.trim().replaceAll("\"", "").toLowerCase();
+                if (!pks.contains(colName)) {
+                    pks.add(colName);
+                }
+            }
+        }
     }
 
     private List<Map<String, String>> parseColumns(String columnsBlock) {

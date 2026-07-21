@@ -104,6 +104,82 @@ class DDLParserServiceTest {
     }
 
     @Test
+    void parse_columnLevelPrimaryKey_extractedToPrimaryKeys() throws Exception {
+        String ddl = "CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(255));";
+
+        List<Map<String, Object>> result = parse(ddl);
+
+        assertThat(primaryKeys(result, "users")).containsExactly("id");
+    }
+
+    @Test
+    void parse_tableLevelPrimaryKey_extractedToPrimaryKeys() throws Exception {
+        String ddl =
+                """
+                CREATE TABLE orders (
+                    id SERIAL,
+                    user_id INT,
+                    PRIMARY KEY (id)
+                );
+                """;
+
+        List<Map<String, Object>> result = parse(ddl);
+
+        assertThat(primaryKeys(result, "orders")).containsExactly("id");
+    }
+
+    @Test
+    void parse_compositePrimaryKey_extractedToPrimaryKeys() throws Exception {
+        String ddl =
+                """
+                CREATE TABLE order_items (
+                    order_id INT,
+                    product_id INT,
+                    PRIMARY KEY (order_id, product_id)
+                );
+                """;
+
+        List<Map<String, Object>> result = parse(ddl);
+
+        assertThat(primaryKeys(result, "order_items")).containsExactly("order_id", "product_id");
+    }
+
+    @Test
+    void parse_alterAddPrimaryKey_appendsToPrimaryKeys() throws Exception {
+        String ddl =
+                """
+                CREATE TABLE users (id SERIAL, name VARCHAR(255));
+                ALTER TABLE users ADD PRIMARY KEY (id);
+                """;
+
+        List<Map<String, Object>> result = parse(ddl);
+
+        assertThat(primaryKeys(result, "users")).containsExactly("id");
+    }
+
+    @Test
+    void parse_alterAddConstraintPrimaryKey_appendsToPrimaryKeys() throws Exception {
+        String ddl =
+                """
+                CREATE TABLE users (id SERIAL, name VARCHAR(255));
+                ALTER TABLE users ADD CONSTRAINT pk_users PRIMARY KEY (id);
+                """;
+
+        List<Map<String, Object>> result = parse(ddl);
+
+        assertThat(primaryKeys(result, "users")).containsExactly("id");
+    }
+
+    @Test
+    void parse_noExplicitPrimaryKey_primaryKeysIsEmpty() throws Exception {
+        String ddl = "CREATE TABLE logs (message TEXT, created_at TIMESTAMP);";
+
+        List<Map<String, Object>> result = parse(ddl);
+
+        assertThat(primaryKeys(result, "logs")).isEmpty();
+    }
+
+    @Test
     void parse_alterAddColumn_appendsColumnToExistingTable() throws Exception {
         String ddl =
                 """
@@ -354,13 +430,14 @@ class DDLParserServiceTest {
 
         assertThat(result).hasSize(3);
 
-        // user_details: UNIQUE KEY becomes an index, not a column
+        // user_details: UNIQUE KEY becomes an index, not a column; PRIMARY KEY extracted
         assertThat(columns(result, "user_details")).hasSize(2);
         assertThat(indexes(result, "user_details")).hasSize(1);
         assertThat(indexes(result, "user_details").get(0)).containsEntry("unique", true);
+        assertThat(primaryKeys(result, "user_details")).containsExactly("user_id");
 
-        // user_addresses: INDEX entries become indexes, not columns; CONSTRAINT entries become
-        // constraints
+        assertThat(primaryKeys(result, "roles")).containsExactly("role_id");
+
         List<Map<String, String>> addrColumns = columns(result, "user_addresses");
         assertThat(addrColumns).hasSize(4);
         assertThat(addrColumns)
@@ -373,6 +450,7 @@ class DDLParserServiceTest {
                 .containsEntry("referencesTable", "user_details");
         assertThat(constraints(result, "user_addresses").get(1))
                 .containsEntry("referencesTable", "roles");
+        assertThat(primaryKeys(result, "user_addresses")).containsExactly("address_id");
     }
 
     @Test
@@ -417,6 +495,15 @@ class DDLParserServiceTest {
                 .filter(t -> tableName.equals(t.get("table")))
                 .findFirst()
                 .map(t -> (List<Map<String, Object>>) t.get("indexes"))
+                .orElseThrow();
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> primaryKeys(List<Map<String, Object>> tables, String tableName) {
+        return tables.stream()
+                .filter(t -> tableName.equals(t.get("table")))
+                .findFirst()
+                .map(t -> (List<String>) t.get("primaryKeys"))
                 .orElseThrow();
     }
 

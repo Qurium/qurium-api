@@ -26,6 +26,7 @@ import org.qurium.connection.dto.requests.TestNewDatabaseConnectionRequest;
 import org.qurium.connection.dto.requests.UpdateDatabaseConnectionRequest;
 import org.qurium.connection.query.GetDatabaseConnection;
 import org.qurium.connection.query.ListDatabaseConnections;
+import org.qurium.connection.query.ListOnlineDatabaseConnections;
 
 @Path("/api/connections")
 @RequiredArgsConstructor
@@ -39,6 +40,7 @@ public class DatabaseConnectionResource {
     private final TestNewDatabaseConnectionHandler testNewDatabaseConnectionHandler;
     private final ReconnectDatabaseConnectionHandler reconnectDatabaseConnectionHandler;
     private final UpdateDatabaseConnectionHandler updateDatabaseConnectionHandler;
+    private final ListOnlineDatabaseConnections listOnlineDatabaseConnections;
 
     @GET
     @Operation(
@@ -63,6 +65,32 @@ public class DatabaseConnectionResource {
                     int size) {
 
         return PaginatedResponse.of(listConnections.query(), page, size);
+    }
+
+    @GET
+    @Path("/online")
+    @Operation(
+            summary = "List online connections",
+            description = "Returns a paginated list of all database connections that are online.")
+    @ApiResponses({
+        @ApiResponse(
+                responseCode = "200",
+                description = "Paginated list of online connections",
+                content = @Content(schema = @Schema(implementation = PaginatedResponse.class))),
+        @ApiResponse(
+                responseCode = "400",
+                description = "Invalid pagination parameters",
+                content = @Content(schema = @Schema(implementation = QuriumErrorResponse.class)))
+    })
+    public PaginatedResponse<DatabaseConnectionDTO> listOnlineConnections(
+            @Parameter(description = "Number of the page") @QueryParam("page") int page,
+            @Parameter(description = "Number of items per page")
+                    @QueryParam("size")
+                    @Min(1)
+                    @Max(100)
+                    int size) {
+
+        return PaginatedResponse.of(listOnlineDatabaseConnections.query(), page, size);
     }
 
     @POST

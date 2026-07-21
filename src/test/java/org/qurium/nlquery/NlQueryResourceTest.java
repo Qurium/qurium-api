@@ -142,10 +142,7 @@ class NlQueryResourceTest {
     private String createConnectionWithSchema() throws Exception {
         String connectionId = createConnection();
         mockSuccessfulIntrospection();
-        given().when()
-                .post(CONNECTIONS_PATH + "/" + connectionId + "/schema/introspect")
-                .then()
-                .statusCode(200);
+        given().when().post("/api/" + connectionId + "/schema/introspect").then().statusCode(200);
         return connectionId;
     }
 

@@ -25,7 +25,7 @@ public enum QuriumExceptionCode {
             2003, "This database connection already exists", Response.Status.CONFLICT),
 
     // Schema
-    SCHEMA_NOT_FOUND(3001, "Schema not found for this connection", Response.Status.NOT_FOUND),
+    SCHEMA_NOT_FOUND(3001, "Schema not found", Response.Status.NOT_FOUND),
     SCHEMA_IMPORT_FAILED(
             3002, "Failed to import schema from database", Response.Status.BAD_REQUEST),
     SCHEMA_PARSE_FAILED(

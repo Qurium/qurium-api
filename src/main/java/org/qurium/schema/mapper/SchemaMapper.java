@@ -12,14 +12,23 @@ import org.qurium.schema.dto.SchemaDTO;
 @Mapper(componentModel = "cdi")
 public interface SchemaMapper {
 
-    @Mapping(source = "connection.id", target = "connectionId")
-    @Mapping(source = "connection.name", target = "connectionName")
+    @Mapping(
+            target = "ownerId",
+            expression =
+                    "java(schema.getConnection() != null ? schema.getConnection().getId() :"
+                        + " schema.getUploadedFile() != null ? schema.getUploadedFile().getId() :"
+                        + " null)")
+    @Mapping(
+            target = "ownerName",
+            expression =
+                    "java(schema.getConnection() != null ? schema.getConnection().getName() :"
+                        + " schema.getUploadedFile() != null ? schema.getUploadedFile().getName() :"
+                        + " null)")
     @Mapping(
             target = "dialect",
             expression =
                     "java(schema.getConnection() != null ? schema.getConnection().getType().name()"
                             + " : null)")
-    @Mapping(source = "uploadedFile.id", target = "uploadedFileId")
     SchemaDTO toDTO(Schema schema);
 
     default JsonNode map(String value) throws JsonProcessingException {

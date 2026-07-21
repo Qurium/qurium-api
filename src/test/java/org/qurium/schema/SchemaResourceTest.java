@@ -128,7 +128,7 @@ class SchemaResourceTest {
                 .then()
                 .statusCode(200)
                 .body("id", notNullValue())
-                .body("connectionId", equalTo(connectionId))
+                .body("ownerId", equalTo(connectionId))
                 .body("schemaJson", notNullValue())
                 .body("source", equalTo("CONNECTED"))
                 .body("createdAt", notNullValue());
@@ -146,18 +146,18 @@ class SchemaResourceTest {
     }
 
     @Test
-    void getSchema_nonexistentConnection_returns404() {
+    void getSchema_nonexistentOwnerId_returns404() {
         given().when()
                 .get(schemaPath(NONEXISTENT_ID))
                 .then()
                 .statusCode(404)
-                .body("code", equalTo(2001));
+                .body("code", equalTo(3001));
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
 
-    private String schemaPath(String connectionId) {
-        return CONNECTIONS_PATH + "/" + connectionId + "/schema";
+    private String schemaPath(String ownerId) {
+        return "/api/" + ownerId + "/schema";
     }
 
     private String createConnection() {
