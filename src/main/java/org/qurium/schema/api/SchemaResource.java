@@ -16,7 +16,7 @@ import org.qurium.schema.command.handler.ImportSchemaHandler;
 import org.qurium.schema.dto.SchemaDTO;
 import org.qurium.schema.query.GetSchema;
 
-@Path("/api/connections/{connectionId}/schema")
+@Path("/api/{ownerId}/schema")
 @RequiredArgsConstructor
 public class SchemaResource {
 
@@ -45,8 +45,7 @@ public class SchemaResource {
                 content = @Content(schema = @Schema(implementation = QuriumErrorResponse.class)))
     })
     public UUID introspect(
-            @Parameter(description = "connection id") @PathParam("connectionId")
-                    UUID connectionId) {
+            @Parameter(description = "ownerId id") @PathParam("ownerId") UUID connectionId) {
 
         return importSchemaHandler.handle(new ImportSchemaCommand(connectionId));
     }
@@ -66,9 +65,8 @@ public class SchemaResource {
                 content = @Content(schema = @Schema(implementation = QuriumErrorResponse.class)))
     })
     public SchemaDTO getSchema(
-            @Parameter(description = "connection id") @PathParam("connectionId")
-                    UUID connectionId) {
+            @Parameter(description = "ownerId id") @PathParam("ownerId") UUID ownerId) {
 
-        return getSchema.query(connectionId);
+        return getSchema.query(ownerId);
     }
 }

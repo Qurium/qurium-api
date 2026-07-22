@@ -45,8 +45,7 @@ class StandaloneSchemaResourceTest {
                 .then()
                 .statusCode(200)
                 .body("id", equalTo(schemaId.toString()))
-                .body("connectionId", nullValue())
-                .body("uploadedFileId", notNullValue())
+                .body("ownerId", notNullValue())
                 .body("source", equalTo("UPLOADED_DDL"))
                 .body("schemaJson", notNullValue());
     }
