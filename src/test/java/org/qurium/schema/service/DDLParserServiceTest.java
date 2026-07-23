@@ -429,6 +429,7 @@ class DDLParserServiceTest {
         List<Map<String, Object>> result = parse(ddl);
 
         assertThat(result).hasSize(3);
+        assertThat(result).allSatisfy(t -> assertThat(t.get("dialect")).isEqualTo("MYSQL"));
 
         // user_details: UNIQUE KEY becomes an index, not a column; PRIMARY KEY extracted
         assertThat(columns(result, "user_details")).hasSize(2);
@@ -451,6 +452,75 @@ class DDLParserServiceTest {
         assertThat(constraints(result, "user_addresses").get(1))
                 .containsEntry("referencesTable", "roles");
         assertThat(primaryKeys(result, "user_addresses")).containsExactly("address_id");
+    }
+
+    @Test
+    void parse_postgresDialect_detectedFromSerial() throws Exception {
+        String ddl = "CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(255));";
+
+        List<Map<String, Object>> result = parse(ddl);
+
+        assertThat(result.get(0).get("dialect")).isEqualTo("POSTGRES");
+    }
+
+    @Test
+    void parse_postgresDialect_detectedFromJsonb() throws Exception {
+        String ddl = "CREATE TABLE events (id INT PRIMARY KEY, payload JSONB);";
+
+        List<Map<String, Object>> result = parse(ddl);
+
+        assertThat(result.get(0).get("dialect")).isEqualTo("POSTGRES");
+    }
+
+    @Test
+    void parse_mysqlDialect_detectedFromAutoIncrement() throws Exception {
+        String ddl =
+                "CREATE TABLE users (id INT NOT NULL AUTO_INCREMENT, name VARCHAR(255), PRIMARY"
+                        + " KEY (id));";
+
+        List<Map<String, Object>> result = parse(ddl);
+
+        assertThat(result.get(0).get("dialect")).isEqualTo("MYSQL");
+    }
+
+    @Test
+    void parse_mssqlDialect_detectedFromIdentity() throws Exception {
+        String ddl = "CREATE TABLE users (id INT IDENTITY(1,1) PRIMARY KEY, name VARCHAR(255));";
+
+        List<Map<String, Object>> result = parse(ddl);
+
+        assertThat(result.get(0).get("dialect")).isEqualTo("MSSQL");
+    }
+
+    @Test
+    void parse_oracleDialect_detectedFromVarchar2() throws Exception {
+        String ddl = "CREATE TABLE users (id NUMBER PRIMARY KEY, name VARCHAR2(255));";
+
+        List<Map<String, Object>> result = parse(ddl);
+
+        assertThat(result.get(0).get("dialect")).isEqualTo("ORACLE");
+    }
+
+    @Test
+    void parse_unknownDialect_whenNoKeywordsMatch() throws Exception {
+        String ddl = "CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(255));";
+
+        List<Map<String, Object>> result = parse(ddl);
+
+        assertThat(result.get(0).get("dialect")).isEqualTo("UNKNOWN");
+    }
+
+    @Test
+    void parse_multipleTablesShareSameDialect() throws Exception {
+        String ddl =
+                """
+                CREATE TABLE users (id SERIAL PRIMARY KEY);
+                CREATE TABLE orders (id SERIAL PRIMARY KEY);
+                """;
+
+        List<Map<String, Object>> result = parse(ddl);
+
+        assertThat(result).allSatisfy(t -> assertThat(t.get("dialect")).isEqualTo("POSTGRES"));
     }
 
     @Test
