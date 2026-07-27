@@ -25,7 +25,7 @@ import org.qurium.nlquery.ai.MockAiSqlService;
 @QuarkusTest
 class NlQueryResourceTest {
 
-    private static final String CONNECTIONS_PATH = "/api/connections";
+    private static final String API_PATH = "/api";
     private static final String NONEXISTENT_ID = "00000000-0000-0000-0000-000000000099";
 
     @InjectMock DatabaseConnectionFactory connectionFactory;
@@ -124,14 +124,14 @@ class NlQueryResourceTest {
     }
 
     private String queryPath(String connectionId) {
-        return CONNECTIONS_PATH + "/" + connectionId + "/query";
+        return API_PATH + "/" + connectionId + "/query";
     }
 
     private String createConnection() {
         return given().contentType(MediaType.APPLICATION_JSON)
                 .body(VALID_CONNECTION_BODY)
                 .when()
-                .post(CONNECTIONS_PATH)
+                .post(API_PATH + "/connections")
                 .then()
                 .statusCode(200)
                 .extract()

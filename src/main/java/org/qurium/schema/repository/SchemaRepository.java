@@ -46,6 +46,10 @@ public class SchemaRepository implements PanacheRepositoryBase<Schema, UUID> {
         return find("uploadedFile.id", uploadedFileId).firstResultOptional();
     }
 
+    public Optional<Schema> findByOwnerId(UUID ownerId) {
+        return findByConnectionId(ownerId).or(() -> findByUploadedFileId(ownerId));
+    }
+
     @SuppressWarnings("unchecked")
     public Map<UUID, Integer> findTableCountsByConnectionId() {
         List<Object[]> rows =

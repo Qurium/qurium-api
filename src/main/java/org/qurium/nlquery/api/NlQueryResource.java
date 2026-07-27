@@ -19,7 +19,7 @@ import org.qurium.nlquery.command.handler.ExecuteNlQueryHandler;
 import org.qurium.nlquery.dto.ExecuteNlQueryRequestDTO;
 import org.qurium.nlquery.dto.ExecuteNlQueryResponseDTO;
 
-@Path("/api/connections/{connectionId}/query")
+@Path("/api/{ownerId}/query")
 @RequiredArgsConstructor
 public class NlQueryResource {
 
@@ -28,28 +28,29 @@ public class NlQueryResource {
     @POST
     @Path("")
     @Operation(
-            summary = "Execute query command",
+            summary = "Execute NL query",
             description =
-                    "Connects to the external database and imports its schema (tables, columns,"
-                            + " types).")
+                    "Translates a natural-language question into SQL using the owner's schema. If"
+                        + " the owner is a live connection the response is marked as executable;"
+                        + " for uploaded-file schemas it returns SQL only.")
     @ApiResponses({
         @ApiResponse(
                 responseCode = "200",
-                description = "Query executed successfully",
+                description = "SQL generated successfully",
                 content =
                         @Content(
                                 schema =
                                         @Schema(implementation = ExecuteNlQueryResponseDTO.class))),
         @ApiResponse(
-                responseCode = "400",
-                description = "Failed to execute query",
+                responseCode = "404",
+                description = "Schema not found",
                 content = @Content(schema = @Schema(implementation = QuriumErrorResponse.class)))
     })
     public ExecuteNlQueryResponseDTO executeNlQuery(
-            @Parameter(description = "connection id") @PathParam("connectionId") UUID connectionId,
+            @Parameter(description = "connection or uploaded-file id") @PathParam("ownerId")
+                    UUID ownerId,
             @Parameter(description = "question") @Valid ExecuteNlQueryRequestDTO request) {
 
-        return executeNlQueryHandler.handle(
-                new ExecuteNlQueryCommand(connectionId, request.question()));
+        return executeNlQueryHandler.handle(new ExecuteNlQueryCommand(ownerId, request.question()));
     }
 }
