@@ -24,7 +24,7 @@ public class ExecuteNlQueryHandler
         implements CommandHandler<ExecuteNlQueryCommand, ExecuteNlQueryResponseDTO> {
 
     private final SchemaRepository schemaRepository;
-    private final AiSqlService sqlService;
+    private final AiSqlService aiSqlService;
     private final NlQueryRepository nlQueryRepository;
 
     @Override
@@ -33,27 +33,29 @@ public class ExecuteNlQueryHandler
 
         Schema schema =
                 schemaRepository
-                        .findByConnectionId(command.connectionId())
+                        .findByOwnerId(command.ownerId())
                         .orElseThrow(() -> new QuriumException(SCHEMA_NOT_FOUND));
 
+        boolean canExecute = schema.getConnection() != null;
+
         try {
-            AiSqlResponse sqlResponse =
-                    sqlService.generateSql(schema.getSchemaJson(), command.question());
+            AiSqlResponse aiResponse =
+                    aiSqlService.generateSql(schema.getSchemaJson(), command.question());
 
             nlQueryRepository.store(
                     schema.getConnection(),
                     command.question(),
-                    sqlResponse.sql(),
-                    null,
-                    sqlResponse.explanation(),
+                    aiResponse.sql(),
+                    canExecute ? aiResponse.resultSnapshot() : null,
+                    aiResponse.explanation(),
                     NlQueryStatus.SUCCESS,
                     null);
 
             return new ExecuteNlQueryResponseDTO(
-                    sqlResponse.sql(),
-                    sqlResponse.explanation(),
-                    sqlResponse.resultSnapshot(),
-                    true);
+                    aiResponse.sql(),
+                    aiResponse.explanation(),
+                    canExecute ? aiResponse.resultSnapshot() : null,
+                    canExecute);
 
         } catch (Exception e) {
             nlQueryRepository.store(

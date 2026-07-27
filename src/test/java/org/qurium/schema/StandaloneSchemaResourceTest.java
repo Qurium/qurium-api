@@ -21,6 +21,7 @@ import org.qurium.nlquery.ai.MockAiSqlService;
 class StandaloneSchemaResourceTest {
 
     private static final String SCHEMA_PATH = "/api/schema";
+    private static final String API_PATH = "/api";
     private static final String NONEXISTENT_ID = "00000000-0000-0000-0000-000000000099";
     private static final String SAMPLE_SCHEMA_JSON =
             "[{\"table\":\"users\",\"columns\":[{\"name\":\"id\",\"type\":\"UUID\"}]}]";
@@ -38,13 +39,13 @@ class StandaloneSchemaResourceTest {
 
     @Test
     void getSchema_existingStandaloneSchema_returnsSchema() {
-        UUID schemaId = insertStandaloneSchema();
+        SchemaSetup setup = insertStandaloneSchema();
 
         given().when()
-                .get(SCHEMA_PATH + "/" + schemaId)
+                .get(SCHEMA_PATH + "/" + setup.schemaId())
                 .then()
                 .statusCode(200)
-                .body("id", equalTo(schemaId.toString()))
+                .body("id", equalTo(setup.schemaId().toString()))
                 .body("ownerId", notNullValue())
                 .body("source", equalTo("UPLOADED_DDL"))
                 .body("schemaJson", notNullValue());
@@ -61,7 +62,7 @@ class StandaloneSchemaResourceTest {
 
     @Test
     void querySchema_withValidSchema_returnsSqlOnly() {
-        UUID schemaId = insertStandaloneSchema();
+        SchemaSetup setup = insertStandaloneSchema();
         when(MockAiSqlService.instance().generateSql(any(), any()))
                 .thenReturn(new AiSqlResponse("SELECT * FROM users", "Returns all users", null));
 
@@ -71,7 +72,7 @@ class StandaloneSchemaResourceTest {
                         { "question": "Show me all users" }
                         """)
                 .when()
-                .post(SCHEMA_PATH + "/" + schemaId + "/query")
+                .post(API_PATH + "/" + setup.uploadedFileId() + "/query")
                 .then()
                 .statusCode(200)
                 .body("sql", equalTo("SELECT * FROM users"))
@@ -81,21 +82,21 @@ class StandaloneSchemaResourceTest {
     }
 
     @Test
-    void querySchema_nonexistentSchema_returns404() {
+    void querySchema_nonexistentOwner_returns404() {
         given().contentType(MediaType.APPLICATION_JSON)
                 .body(
                         """
                         { "question": "Show me all users" }
                         """)
                 .when()
-                .post(SCHEMA_PATH + "/" + NONEXISTENT_ID + "/query")
+                .post(API_PATH + "/" + NONEXISTENT_ID + "/query")
                 .then()
                 .statusCode(404)
                 .body("code", equalTo(3001));
     }
 
     @Transactional
-    UUID insertStandaloneSchema() {
+    SchemaSetup insertStandaloneSchema() {
         UUID uploadedFileId = UUID.randomUUID();
         UUID schemaId = UUID.randomUUID();
         entityManager
@@ -114,6 +115,8 @@ class StandaloneSchemaResourceTest {
                 .setParameter(2, uploadedFileId)
                 .setParameter(3, SAMPLE_SCHEMA_JSON)
                 .executeUpdate();
-        return schemaId;
+        return new SchemaSetup(uploadedFileId, schemaId);
     }
+
+    record SchemaSetup(UUID uploadedFileId, UUID schemaId) {}
 }
