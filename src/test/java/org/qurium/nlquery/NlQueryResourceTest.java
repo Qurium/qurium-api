@@ -15,6 +15,8 @@ import jakarta.ws.rs.core.MediaType;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.Statement;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -46,7 +48,7 @@ class NlQueryResourceTest {
     void executeQuery_withSchema_returnsSqlAndExplanation() throws Exception {
         String connectionId = createConnectionWithSchema();
         when(MockAiSqlService.instance().generateSql(any(), any()))
-                .thenReturn(new AiSqlResponse("SELECT * FROM users", "Returns all users", null));
+                .thenReturn(new AiSqlResponse("SELECT * FROM users", "Returns all users"));
 
         given().contentType(MediaType.APPLICATION_JSON)
                 .body(
@@ -147,12 +149,23 @@ class NlQueryResourceTest {
     }
 
     private void mockSuccessfulIntrospection() throws Exception {
-        ResultSet rs = Mockito.mock(ResultSet.class);
-        when(rs.next()).thenReturn(false);
+        ResultSet introspectRs = Mockito.mock(ResultSet.class);
+        when(introspectRs.next()).thenReturn(false);
         DatabaseMetaData metaData = Mockito.mock(DatabaseMetaData.class);
-        when(metaData.getTables(any(), any(), any(), any())).thenReturn(rs);
+        when(metaData.getTables(any(), any(), any(), any())).thenReturn(introspectRs);
+
+        ResultSetMetaData queryMeta = Mockito.mock(ResultSetMetaData.class);
+        when(queryMeta.getColumnCount()).thenReturn(0);
+        ResultSet queryRs = Mockito.mock(ResultSet.class);
+        when(queryRs.next()).thenReturn(false);
+        when(queryRs.getMetaData()).thenReturn(queryMeta);
+        Statement stmt = Mockito.mock(Statement.class);
+        when(stmt.executeQuery(any())).thenReturn(queryRs);
+
         Connection jdbc = Mockito.mock(Connection.class);
         when(jdbc.getMetaData()).thenReturn(metaData);
+        when(jdbc.createStatement()).thenReturn(stmt);
+
         when(connectionFactory.open(any(org.qurium.connection.domain.DatabaseConnection.class)))
                 .thenReturn(jdbc);
     }
