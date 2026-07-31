@@ -28,6 +28,8 @@ class StandaloneSchemaResourceTest {
 
     @Inject EntityManager entityManager;
 
+    private UUID lastUploadedFileId;
+
     @BeforeEach
     @Transactional
     void cleanUp() {
@@ -39,13 +41,13 @@ class StandaloneSchemaResourceTest {
 
     @Test
     void getSchema_existingStandaloneSchema_returnsSchema() {
-        SchemaSetup setup = insertStandaloneSchema();
+        UUID schemaId = insertStandaloneSchema();
 
         given().when()
-                .get(SCHEMA_PATH + "/" + setup.schemaId())
+                .get(SCHEMA_PATH + "/" + schemaId)
                 .then()
                 .statusCode(200)
-                .body("id", equalTo(setup.schemaId().toString()))
+                .body("id", equalTo(schemaId.toString()))
                 .body("ownerId", notNullValue())
                 .body("source", equalTo("UPLOADED_DDL"))
                 .body("schemaJson", notNullValue());
@@ -62,9 +64,9 @@ class StandaloneSchemaResourceTest {
 
     @Test
     void querySchema_withValidSchema_returnsSqlOnly() {
-        SchemaSetup setup = insertStandaloneSchema();
+        insertStandaloneSchema();
         when(MockAiSqlService.instance().generateSql(any(), any()))
-                .thenReturn(new AiSqlResponse("SELECT * FROM users", "Returns all users", null));
+                .thenReturn(new AiSqlResponse("SELECT * FROM users", "Returns all users"));
 
         given().contentType(MediaType.APPLICATION_JSON)
                 .body(
@@ -72,7 +74,7 @@ class StandaloneSchemaResourceTest {
                         { "question": "Show me all users" }
                         """)
                 .when()
-                .post(API_PATH + "/" + setup.uploadedFileId() + "/query")
+                .post(API_PATH + "/" + lastUploadedFileId + "/query")
                 .then()
                 .statusCode(200)
                 .body("sql", equalTo("SELECT * FROM users"))
@@ -96,7 +98,7 @@ class StandaloneSchemaResourceTest {
     }
 
     @Transactional
-    SchemaSetup insertStandaloneSchema() {
+    UUID insertStandaloneSchema() {
         UUID uploadedFileId = UUID.randomUUID();
         UUID schemaId = UUID.randomUUID();
         entityManager
@@ -115,8 +117,7 @@ class StandaloneSchemaResourceTest {
                 .setParameter(2, uploadedFileId)
                 .setParameter(3, SAMPLE_SCHEMA_JSON)
                 .executeUpdate();
-        return new SchemaSetup(uploadedFileId, schemaId);
+        lastUploadedFileId = uploadedFileId;
+        return schemaId;
     }
-
-    record SchemaSetup(UUID uploadedFileId, UUID schemaId) {}
 }

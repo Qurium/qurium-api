@@ -33,4 +33,9 @@ public class MockAiSqlService implements AiSqlService {
     public AiSqlResponse generateSql(String schemaJson, String question) {
         return DELEGATE.generateSql(schemaJson, question);
     }
+
+    @Override
+    public AiResultSnapshot generateResultSnapshot(String question, String result) {
+        return DELEGATE.generateResultSnapshot(question, result);
+    }
 }
