@@ -37,9 +37,18 @@ public interface AiSqlService {
                    "resultSnapshot": "<human-readable summary>"
                }
             Rules:
-               - If the result is a single value, present just the number.
-               - If the result contains multiple rows, include the values as a comma-separated list within the summary string.
-               - If the result is empty, say "No matching records found."
+               - If the result is a single value, return:
+                    {
+                        "resultSnapshot": "value"
+                    }
+               - If the result contains multiple rows, return:
+                    {
+                        "resultSnapshot": "column1: value, column2: value, column3: value; column1: value, column2: value, column3: value;"
+                    }
+               - If the result is empty, return:
+                    {
+                        "resultSnapshot": "No matching records found."
+                    }
                - Do not invent or infer information.
             """)
     @UserMessage(
