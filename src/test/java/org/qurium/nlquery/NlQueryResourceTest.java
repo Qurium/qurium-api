@@ -17,6 +17,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Statement;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -125,13 +126,128 @@ class NlQueryResourceTest {
                 .statusCode(400);
     }
 
+    // --- History endpoint tests ---
+
+    @Test
+    void getHistory_noQueriesExist_returnsEmptyPage() {
+        String connectionId = createConnection();
+
+        given().when()
+                .get(historyPath(connectionId) + "?page=0&size=10")
+                .then()
+                .statusCode(200)
+                .body("content", hasSize(0))
+                .body("totalElements", equalTo(0))
+                .body("totalPages", equalTo(1))
+                .body("empty", equalTo(true));
+    }
+
+    @Test
+    void getHistory_withQueries_returnsResultsOrderedByDateDesc() {
+        String connectionId = createConnection();
+        insertNlQuery(UUID.fromString(connectionId), "oldest question", "2026-01-01");
+        insertNlQuery(UUID.fromString(connectionId), "newest question", "2026-06-01");
+
+        given().when()
+                .get(historyPath(connectionId) + "?page=0&size=10")
+                .then()
+                .statusCode(200)
+                .body("totalElements", equalTo(2))
+                .body("content[0].question", equalTo("newest question"))
+                .body("content[1].question", equalTo("oldest question"));
+    }
+
+    @Test
+    void getHistory_withQueries_returnsExpectedFields() {
+        String connectionId = createConnection();
+        insertNlQuery(UUID.fromString(connectionId), "How many users?", "2026-06-01");
+
+        given().when()
+                .get(historyPath(connectionId) + "?page=0&size=10")
+                .then()
+                .statusCode(200)
+                .body("content[0].question", equalTo("How many users?"))
+                .body("content[0].status", equalTo("SUCCESS"))
+                .body("content[0].executedAt", notNullValue());
+    }
+
+    @Test
+    void getHistory_pagination_returnsCorrectPage() {
+        String connectionId = createConnection();
+        for (int i = 1; i <= 3; i++) {
+            insertNlQuery(UUID.fromString(connectionId), "question " + i, "2026-0" + i + "-01");
+        }
+
+        given().when()
+                .get(historyPath(connectionId) + "?page=0&size=2")
+                .then()
+                .statusCode(200)
+                .body("content", hasSize(2))
+                .body("totalElements", equalTo(3))
+                .body("totalPages", equalTo(2))
+                .body("first", equalTo(true))
+                .body("last", equalTo(false));
+
+        given().when()
+                .get(historyPath(connectionId) + "?page=1&size=2")
+                .then()
+                .statusCode(200)
+                .body("content", hasSize(1))
+                .body("first", equalTo(false))
+                .body("last", equalTo(true));
+    }
+
+    @Test
+    void getHistory_nonexistentOwner_returnsEmptyPage() {
+        given().when()
+                .get(historyPath(NONEXISTENT_ID) + "?page=0&size=10")
+                .then()
+                .statusCode(200)
+                .body("content", hasSize(0))
+                .body("totalElements", equalTo(0));
+    }
+
+    @Test
+    void getHistory_isolatedByOwner_doesNotReturnOtherOwnersHistory() {
+        String connectionIdA = createConnection(VALID_CONNECTION_BODY);
+        String connectionIdB = createConnection(VALID_CONNECTION_BODY_ALT);
+        insertNlQuery(UUID.fromString(connectionIdA), "question A", "2026-06-01");
+
+        given().when()
+                .get(historyPath(connectionIdB) + "?page=0&size=10")
+                .then()
+                .statusCode(200)
+                .body("content", hasSize(0));
+    }
+
+    @Transactional
+    void insertNlQuery(UUID connectionId, String question, String createdAt) {
+        entityManager
+                .createNativeQuery(
+                        "INSERT INTO nl_query (id, connection_id, question, status, created_at)"
+                                + " VALUES (?1, ?2, ?3, 'SUCCESS', CAST(?4 AS TIMESTAMP))")
+                .setParameter(1, UUID.randomUUID())
+                .setParameter(2, connectionId)
+                .setParameter(3, question)
+                .setParameter(4, createdAt)
+                .executeUpdate();
+    }
+
+    private String historyPath(String ownerId) {
+        return API_PATH + "/" + ownerId + "/query/history";
+    }
+
     private String queryPath(String connectionId) {
         return API_PATH + "/" + connectionId + "/query";
     }
 
     private String createConnection() {
+        return createConnection(VALID_CONNECTION_BODY);
+    }
+
+    private String createConnection(String body) {
         return given().contentType(MediaType.APPLICATION_JSON)
-                .body(VALID_CONNECTION_BODY)
+                .body(body)
                 .when()
                 .post(API_PATH + "/connections")
                 .then()
@@ -176,6 +292,19 @@ class NlQueryResourceTest {
                 "name": "Test Connection",
                 "type": "POSTGRES",
                 "host": "192.168.1.100",
+                "port": 5432,
+                "databaseName": "mydb",
+                "username": "admin",
+                "password": "secret"
+            }
+            """;
+
+    private static final String VALID_CONNECTION_BODY_ALT =
+            """
+            {
+                "name": "Test Connection B",
+                "type": "POSTGRES",
+                "host": "192.168.1.101",
                 "port": 5432,
                 "databaseName": "mydb",
                 "username": "admin",

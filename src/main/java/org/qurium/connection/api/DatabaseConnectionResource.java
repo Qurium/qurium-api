@@ -60,6 +60,7 @@ public class DatabaseConnectionResource {
             @Parameter(description = "Number of the page") @QueryParam("page") int page,
             @Parameter(description = "Number of items per page")
                     @QueryParam("size")
+                    @DefaultValue("20")
                     @Min(1)
                     @Max(100)
                     int size) {
@@ -86,6 +87,7 @@ public class DatabaseConnectionResource {
             @Parameter(description = "Number of the page") @QueryParam("page") int page,
             @Parameter(description = "Number of items per page")
                     @QueryParam("size")
+                    @DefaultValue("20")
                     @Min(1)
                     @Max(100)
                     int size) {

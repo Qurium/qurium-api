@@ -31,9 +31,13 @@ public class PaginatedResponse<T> {
     }
 
     public static <T> PaginatedResponse<T> of(List<T> query, int page, int size) {
-
         long totalElements = query.size();
         int totalPages = Math.max(1, (int) Math.ceil((double) totalElements / size));
         return new PaginatedResponse<>(query, page, size, totalElements, totalPages);
+    }
+
+    public static <T> PaginatedResponse<T> of(
+            List<T> content, int page, int size, long totalElements, int totalPages) {
+        return new PaginatedResponse<>(content, page, size, totalElements, totalPages);
     }
 }

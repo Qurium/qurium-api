@@ -3,6 +3,7 @@ package org.qurium.nlquery.command.handler;
 
 import static org.qurium.common.exception.QuriumExceptionCode.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import java.sql.Connection;
@@ -27,16 +28,21 @@ import org.qurium.nlquery.dto.ExecuteNlQueryResponseDTO;
 import org.qurium.nlquery.repository.NlQueryRepository;
 import org.qurium.schema.domain.Schema;
 import org.qurium.schema.repository.SchemaRepository;
+import org.qurium.uploadedfile.repository.UploadedFileRepository;
 
 @ApplicationScoped
 @RequiredArgsConstructor
 public class ExecuteNlQueryHandler
         implements CommandHandler<ExecuteNlQueryCommand, ExecuteNlQueryResponseDTO> {
 
+    private record SqlResult(String rawJson, long executionTimeMs, int rowsReturned) {}
+
     private final SchemaRepository schemaRepository;
     private final AiSqlService aiSqlService;
     private final NlQueryRepository nlQueryRepository;
     private final DatabaseConnectionFactory databaseConnectionFactory;
+    private final UploadedFileRepository uploadedFileRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
     @Transactional
@@ -54,20 +60,30 @@ public class ExecuteNlQueryHandler
             AiSqlResponse aiResponse =
                     aiSqlService.generateSql(schema.getSchemaJson(), command.question());
 
-            AiResultSnapshot aiResultSnapshot = null;
+            String snapshot = null;
+            Long executionTimeMs = null;
+            Integer rowsReturned = null;
+
             if (canExecute) {
-                String rawResult = executeSql(connection, aiResponse.sql());
-                aiResultSnapshot =
-                        aiSqlService.generateResultSnapshot(command.question(), rawResult);
+                SqlResult sqlResult = executeSql(connection, aiResponse.sql());
+                executionTimeMs = sqlResult.executionTimeMs();
+                rowsReturned = sqlResult.rowsReturned();
+                AiResultSnapshot aiResultSnapshot =
+                        aiSqlService.generateResultSnapshot(
+                                command.question(), sqlResult.rawJson());
+                if (aiResultSnapshot != null) {
+                    snapshot = aiResultSnapshot.resultSnapshot();
+                }
             }
 
-            String snapshot = aiResultSnapshot != null ? aiResultSnapshot.resultSnapshot() : null;
-
             nlQueryRepository.store(
-                    connection,
+                    canExecute ? schema.getConnection() : null,
+                    !canExecute ? schema.getUploadedFile() : null,
                     command.question(),
                     aiResponse.sql(),
                     snapshot,
+                    executionTimeMs,
+                    rowsReturned,
                     aiResponse.explanation(),
                     NlQueryStatus.SUCCESS,
                     null);
@@ -77,8 +93,11 @@ public class ExecuteNlQueryHandler
 
         } catch (Exception e) {
             nlQueryRepository.store(
-                    connection,
+                    canExecute ? schema.getConnection() : null,
+                    !canExecute ? schema.getUploadedFile() : null,
                     command.question(),
+                    null,
+                    null,
                     null,
                     null,
                     null,
@@ -89,10 +108,13 @@ public class ExecuteNlQueryHandler
         }
     }
 
-    private String executeSql(DatabaseConnection connection, String sql) {
+    private SqlResult executeSql(DatabaseConnection connection, String sql) {
         try (Connection jdbc = databaseConnectionFactory.open(connection);
-                Statement stmt = jdbc.createStatement();
-                ResultSet rs = stmt.executeQuery(sql)) {
+                Statement stmt = jdbc.createStatement()) {
+
+            long start = System.currentTimeMillis();
+            ResultSet rs = stmt.executeQuery(sql);
+            long executionTimeMs = System.currentTimeMillis() - start;
 
             ResultSetMetaData meta = rs.getMetaData();
             int cols = meta.getColumnCount();
@@ -106,7 +128,8 @@ public class ExecuteNlQueryHandler
                 rows.add(row);
             }
 
-            return rows.toString();
+            return new SqlResult(
+                    objectMapper.writeValueAsString(rows), executionTimeMs, rows.size());
 
         } catch (QuriumException e) {
             throw e;

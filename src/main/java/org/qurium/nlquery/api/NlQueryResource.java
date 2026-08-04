@@ -8,22 +8,26 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.ws.rs.*;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.qurium.common.PaginatedResponse;
 import org.qurium.common.exception.QuriumErrorResponse;
 import org.qurium.nlquery.command.data.ExecuteNlQueryCommand;
 import org.qurium.nlquery.command.handler.ExecuteNlQueryHandler;
 import org.qurium.nlquery.dto.ExecuteNlQueryRequestDTO;
 import org.qurium.nlquery.dto.ExecuteNlQueryResponseDTO;
+import org.qurium.nlquery.dto.QueryHistoryResponseDTO;
+import org.qurium.nlquery.query.GetQueryExecutionHistory;
 
 @Path("/api/{ownerId}/query")
 @RequiredArgsConstructor
 public class NlQueryResource {
 
     private final ExecuteNlQueryHandler executeNlQueryHandler;
+    private final GetQueryExecutionHistory getQueryExecutionHistory;
 
     @POST
     @Path("")
@@ -52,5 +56,21 @@ public class NlQueryResource {
             @Parameter(description = "question") @Valid ExecuteNlQueryRequestDTO request) {
 
         return executeNlQueryHandler.handle(new ExecuteNlQueryCommand(ownerId, request.question()));
+    }
+
+    @GET
+    @Path("/history")
+    public PaginatedResponse<QueryHistoryResponseDTO> getQueryExecutionHistory(
+            @Parameter(description = "connection or uploaded-file id") @PathParam("ownerId")
+                    UUID ownerId,
+            @Parameter(description = "Number of the page") @QueryParam("page") int page,
+            @Parameter(description = "Number of items per page")
+                    @QueryParam("size")
+                    @DefaultValue("20")
+                    @Min(1)
+                    @Max(100)
+                    int size) {
+
+        return getQueryExecutionHistory.query(ownerId, page, size);
     }
 }

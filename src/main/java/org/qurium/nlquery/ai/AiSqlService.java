@@ -15,7 +15,7 @@ public interface AiSqlService {
             Respond ONLY with a valid JSON object in this exact format:
             {
                 "sql": "<the SQL query>",
-                 "explanation": "<plain English explanation>"
+                "explanation": "<plain English explanation>"
             }
             Never generate INSERT, UPDATE, DELETE, DROP, or any mutating SQL.
             """)

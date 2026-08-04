@@ -8,16 +8,13 @@ import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.SoftDelete;
-import org.hibernate.annotations.SoftDeleteType;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.*;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @MappedSuperclass
-@SoftDelete(strategy = SoftDeleteType.TIMESTAMP, columnName = "deleted_at")
+@SQLRestriction("deleted_at is null")
 public abstract class BaseEntity extends PanacheEntityBase {
 
     @Id @GeneratedValue private UUID id;
